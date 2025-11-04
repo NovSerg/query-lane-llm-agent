@@ -1,36 +1,84 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# QueryLane
 
-## Getting Started
+> **query-lane-llm-agent** - Fast AI chat application with Z.AI (GLM models) integration
 
-First, run the development server:
+Your fast lane from question to answer. A modern, responsive web chat interface for interacting with Z.AI's GLM language models with streaming responses, multiple model selection, and persistent chat history.
+
+## Features
+
+- 🤖 **Multiple AI Models** - Support for GLM-4.6, GLM-4.5, GLM-4.5-Flash, and more
+- 🚀 **Streaming Responses** - Real-time token-by-token message streaming
+- 💾 **Persistent History** - Auto-save conversations to localStorage
+- 🎨 **Dark/Light Theme** - Theme toggle with system preference detection
+- 📱 **Fully Responsive** - Mobile-first design with adaptive UI
+- ⚡ **Rate Limiting** - Built-in protection against abuse
+- 🔄 **Abort Control** - Stop generation at any time
+- 📋 **Copy & Clear** - Easy message management
+
+## Quick Start
 
 ```bash
+# Install dependencies
+npm install
+
+# Set up environment variables
+cp .env.example .env.local
+# Edit .env.local and add your ZAI_API_KEY
+
+# Run development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Environment Variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Get your Z.AI API key at [https://open.bigmodel.cn/](https://open.bigmodel.cn/)
 
-## Learn More
+```env
+ZAI_API_KEY=your_api_key_here
+RATE_LIMIT_RPM=30
+MAX_INPUT_CHARS=10000
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Available Scripts
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- `npm run dev` - Development server
+- `npm run build` - Production build
+- `npm run start` - Production server
+- `npm run test` - Run tests
+- `npm run lint` - Lint code
+- `npm run format` - Format code with Prettier
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Tech Stack
 
-## Deploy on Vercel
+- **Framework**: Next.js 16 (App Router)
+- **UI**: React 19 + TypeScript 5
+- **Styling**: Tailwind CSS v4 + shadcn/ui
+- **Validation**: Zod schemas
+- **Testing**: Vitest
+- **AI Provider**: Z.AI (Zhipu AI) - GLM models
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Project Structure
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```
+query-lane-llm-agent/
+├── app/                  # Next.js App Router
+│   ├── api/chat/        # Chat API endpoint
+│   └── page.tsx         # Main chat interface
+├── components/          # React components
+│   ├── ui/             # shadcn/ui primitives
+│   ├── ModelSelector.tsx
+│   ├── MessageList.tsx
+│   └── Composer.tsx
+├── lib/                # Client utilities
+│   ├── ndjson-client.ts
+│   └── storage.ts
+└── server/             # Server-side code
+    ├── provider/       # AI provider adapters
+    └── schema.ts       # Zod validation schemas
+```
+
+## License
+
+MIT © Sergey Novachenko

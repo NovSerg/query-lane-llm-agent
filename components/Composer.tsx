@@ -58,7 +58,7 @@ export function Composer({
           value={message}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
-          placeholder="Type your message..."
+          placeholder="Введите сообщение..."
           disabled={disabled}
           className="flex-1 min-h-[52px] sm:min-h-[60px] max-h-[200px] resize-none pr-12 text-sm sm:text-base"
           rows={1}
@@ -68,7 +68,7 @@ export function Composer({
             onClick={handleSend}
             disabled={disabled || !message.trim()}
             size="sm"
-            className="h-7 w-7 sm:h-8 sm:w-8 rounded-full"
+            className="h-7 w-7 sm:h-8 sm:w-8 rounded-full hover:scale-110 hover:shadow-lg active:scale-95 transition-all duration-200"
           >
             <Send className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
           </Button>

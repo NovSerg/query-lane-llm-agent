@@ -7,6 +7,14 @@ import { Message } from '../lib/types';
 export const MessageSchema = z.object({
   role: z.enum(['user', 'assistant', 'system']),
   content: z.string(),
+  metadata: z
+    .object({
+      format: z.enum(['text', 'json', 'xml', 'custom']).optional(),
+      parsed: z.any().optional(),
+      validationError: z.string().optional(),
+      timestamp: z.number().optional(),
+    })
+    .optional(),
 });
 
 /**
@@ -28,11 +36,33 @@ export const AVAILABLE_MODELS = [
 export const DEFAULT_MODEL = 'glm-4.5-flash';
 
 /**
+ * Output format schema
+ */
+export const OutputFormatSchema = z.enum(['text', 'json', 'xml', 'custom']);
+
+/**
+ * Validation mode schema
+ */
+export const ValidationModeSchema = z.enum(['strict', 'lenient', 'fallback']);
+
+/**
+ * Format configuration schema
+ */
+export const FormatConfigSchema = z.object({
+  format: OutputFormatSchema,
+  systemPrompt: z.string(),
+  exampleFormat: z.string().optional(),
+  validationMode: ValidationModeSchema.optional().default('lenient'),
+  customFormatId: z.string().optional(),
+});
+
+/**
  * Zod schema for validating chat requests
  */
 export const ChatRequestSchema = z.object({
   messages: z.array(MessageSchema).max(50),
   model: z.enum(AVAILABLE_MODELS).optional().default(DEFAULT_MODEL),
+  formatConfig: FormatConfigSchema.optional(),
 });
 
 /**

@@ -35,9 +35,26 @@ export function ModelSelector({
   className,
 }: ModelSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isDark, setIsDark] = useState(true);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const selectedModelData = MODELS.find((m) => m.id === selectedModel) || MODELS[5];
+
+  // Check theme on mount and when it changes
+  useEffect(() => {
+    const checkTheme = () => {
+      setIsDark(document.documentElement.classList.contains('dark'));
+    };
+    checkTheme();
+
+    const observer = new MutationObserver(checkTheme);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class']
+    });
+
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -61,7 +78,10 @@ export function ModelSelector({
         onClick={() => setIsOpen(!isOpen)}
         variant="ghost"
         size="sm"
-        className="gap-1.5 sm:gap-2 h-8 sm:h-9 px-2 sm:px-3 text-xs sm:text-sm font-medium"
+        className={cn(
+          'gap-1.5 sm:gap-2 h-8 sm:h-9 px-2 sm:px-3 text-xs sm:text-sm font-medium',
+          'hover:bg-accent hover:text-accent-foreground hover:scale-105 hover:shadow-md active:scale-95 transition-all duration-200'
+        )}
       >
         <span className="hidden sm:inline">{selectedModelData.name}</span>
         <span className="sm:hidden">{selectedModelData.name.replace('GLM-', '')}</span>
@@ -74,7 +94,15 @@ export function ModelSelector({
       </Button>
 
       {isOpen && (
-        <div className="absolute top-full right-0 mt-1 w-56 sm:w-64 bg-card border border-border rounded-lg shadow-lg z-50 overflow-hidden">
+        <div
+          className="absolute top-full right-0 mt-1 w-56 sm:w-64 rounded-lg shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200"
+          style={{
+            zIndex: 999999,
+            backgroundColor: isDark ? '#18181b' : '#ffffff',
+            border: isDark ? '1px solid #27272a' : '1px solid #e4e4e7',
+            opacity: 1,
+          }}
+        >
           <div className="p-1.5">
             {MODELS.map((model) => (
               <button
@@ -84,8 +112,8 @@ export function ModelSelector({
                   setIsOpen(false);
                 }}
                 className={cn(
-                  'w-full flex items-start gap-2 px-3 py-2 rounded-md text-left transition-colors',
-                  'hover:bg-secondary',
+                  'w-full flex items-start gap-2 px-3 py-2 rounded-md text-left transition-all duration-150',
+                  'hover:bg-secondary hover:shadow-md hover:scale-[1.02] active:scale-[0.98]',
                   selectedModel === model.id && 'bg-secondary/80'
                 )}
               >

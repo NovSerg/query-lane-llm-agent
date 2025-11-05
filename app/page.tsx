@@ -1,26 +1,40 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Message } from '@/lib/types';
-import { storage } from '@/lib/storage';
+import { Message, FormatConfig } from '@/lib/types';
 import { sendChatRequest, processNDJSONStream } from '@/lib/ndjson-client';
+import { processResponse } from '@/lib/json-parser';
+import { responseHistory } from '@/lib/response-history';
+import { customFormats } from '@/lib/custom-formats';
 import { MessageList } from '@/components/MessageList';
 import { Composer } from '@/components/Composer';
 import { Toolbar } from '@/components/Toolbar';
 import { WelcomeScreen } from '@/components/WelcomeScreen';
 import { ModelSelector } from '@/components/ModelSelector';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
-import { Moon, Sun } from 'lucide-react';
+import { FormatConfigurator } from '@/components/FormatConfigurator';
+import { ChatHistory } from '@/components/ChatHistory';
+import { ThemeProvider } from '@/components/ThemeProvider';
+import {
+  getCurrentOrCreateChat,
+  getChatById,
+  updateChat,
+  createChat,
+  setCurrentChatId,
+} from '@/lib/chat-storage';
+import IconButton from '@mui/material/IconButton';
+import Brightness4Icon from '@mui/icons-material/Brightness4';
+import Brightness7Icon from '@mui/icons-material/Brightness7';
 
 type ChatState = 'idle' | 'connecting' | 'streaming' | 'stopped' | 'error';
 
 export default function ChatPage() {
+  const [currentChatId, setCurrentChatIdState] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [state, setState] = useState<ChatState>('idle');
   const [error, setError] = useState<string | null>(null);
   const [isDarkMode, setIsDarkMode] = useState(true); // default to dark
   const [selectedModel, setSelectedModel] = useState('glm-4.5-flash');
+  const [formatConfig, setFormatConfig] = useState<FormatConfig | null>(null);
   const [mounted, setMounted] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -41,17 +55,20 @@ export default function ChatPage() {
       setSelectedModel(savedModel);
     }
 
-    // Load messages from storage
-    setMessages(storage.getThread());
+    // Load current chat or create new one
+    const currentChat = getCurrentOrCreateChat();
+    setCurrentChatIdState(currentChat.id);
+    setMessages(currentChat.messages);
+
     setMounted(true);
   }, []);
 
-  // Save messages to localStorage whenever they change
+  // Save messages to current chat whenever they change
   useEffect(() => {
-    if (mounted) {
-      storage.saveThread(messages);
+    if (mounted && currentChatId) {
+      updateChat(currentChatId, { messages });
     }
-  }, [messages, mounted]);
+  }, [messages, mounted, currentChatId]);
 
   // Save theme preference and apply to document whenever it changes
   useEffect(() => {
@@ -90,7 +107,8 @@ export default function ChatPage() {
       const response = await sendChatRequest(
         updatedMessages,
         controller.signal,
-        selectedModel
+        selectedModel,
+        formatConfig || undefined
       );
       setState('streaming');
 
@@ -117,6 +135,43 @@ export default function ChatPage() {
           }
         },
         onDone: () => {
+          // Parse response if format config is set
+          if (formatConfig) {
+            const parsed = processResponse(
+              assistantMessage,
+              formatConfig.format,
+              formatConfig.validationMode || 'lenient'
+            );
+
+            // Update message with parsed data
+            setMessages((prev) => {
+              const newMessages = [...prev];
+              newMessages[newMessages.length - 1] = {
+                role: 'assistant',
+                content: assistantMessage,
+                metadata: {
+                  format: formatConfig.format,
+                  parsed,
+                  timestamp: Date.now(),
+                },
+              };
+              return newMessages;
+            });
+
+            // Save to history if valid
+            if (parsed.isValid && formatConfig.customFormatId) {
+              const customFormat = customFormats.getById(formatConfig.customFormatId);
+
+              responseHistory.add({
+                prompt: userMessage,
+                parsedResponse: parsed,
+                templateId: formatConfig.customFormatId,
+                templateName: customFormat?.name,
+                model: selectedModel,
+              });
+            }
+          }
+
           setState('idle');
           abortControllerRef.current = null;
         },
@@ -144,10 +199,31 @@ export default function ChatPage() {
   };
 
   const handleClear = () => {
+    if (currentChatId) {
+      updateChat(currentChatId, { messages: [] });
+      setMessages([]);
+      setError(null);
+      setState('idle');
+    }
+  };
+
+  const handleNewChat = () => {
+    const newChat = createChat();
+    setCurrentChatIdState(newChat.id);
     setMessages([]);
     setError(null);
     setState('idle');
-    storage.clearThread();
+  };
+
+  const handleSelectChat = (chatId: string) => {
+    const chat = getChatById(chatId);
+    if (chat) {
+      setCurrentChatIdState(chat.id);
+      setCurrentChatId(chat.id); // Sync with storage
+      setMessages(chat.messages);
+      setError(null);
+      setState('idle');
+    }
   };
 
   const handleCopy = () => {
@@ -163,13 +239,13 @@ export default function ChatPage() {
   const getStateMessage = () => {
     switch (state) {
       case 'connecting':
-        return 'Connecting...';
+        return 'Подключение...';
       case 'streaming':
-        return 'Receiving response...';
+        return 'Получение ответа...';
       case 'stopped':
-        return 'Response stopped';
+        return 'Ответ остановлен';
       case 'error':
-        return error || 'An error occurred';
+        return error || 'Произошла ошибка';
       default:
         return '';
     }
@@ -183,65 +259,77 @@ export default function ChatPage() {
 
   // Prevent hydration mismatch by not rendering until mounted
   if (!mounted) {
-    return (
-      <div className="flex flex-col h-screen bg-background text-foreground">
-        <header className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b bg-card/50 backdrop-blur-sm">
-          <div className="flex items-center gap-2 sm:gap-3">
-            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center text-primary-foreground font-bold shadow-lg text-sm sm:text-base">
+    return null;
+  }
+
+  return (
+    <ThemeProvider isDarkMode={isDarkMode}>
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
+        {/* Header */}
+        <header style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '12px 24px',
+          borderBottom: '1px solid',
+          borderColor: isDarkMode ? '#27272a' : '#e4e4e7',
+          backdropFilter: 'blur(8px)',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <ChatHistory
+              currentChatId={currentChatId}
+              onSelectChat={handleSelectChat}
+              onNewChat={handleNewChat}
+            />
+            <div style={{
+              width: '36px',
+              height: '36px',
+              borderRadius: '12px',
+              background: 'linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'white',
+              fontWeight: 'bold',
+              boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)',
+            }}>
               QL
             </div>
-            <div className="hidden sm:block">
-              <h1 className="text-base sm:text-lg font-semibold">QueryLane</h1>
-            </div>
+            <h1 style={{ fontSize: '1.125rem', fontWeight: 600 }}>QueryLane</h1>
           </div>
-          <div className="flex items-center gap-1 sm:gap-2">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <ModelSelector
               selectedModel={selectedModel}
               onModelChange={setSelectedModel}
             />
+            <FormatConfigurator
+              onFormatChange={setFormatConfig}
+              currentConfig={formatConfig}
+            />
+            <IconButton
+              onClick={toggleDarkMode}
+              color="inherit"
+              sx={{
+                transition: 'all 0.2s',
+                '&:hover': {
+                  transform: 'scale(1.1)',
+                  boxShadow: 2,
+                },
+                '&:active': {
+                  transform: 'scale(0.95)',
+                },
+              }}
+            >
+              {isDarkMode ? <Brightness7Icon /> : <Brightness4Icon />}
+            </IconButton>
           </div>
         </header>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex flex-col h-screen bg-background text-foreground transition-colors duration-300">
-      {/* Header */}
-      <header className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b bg-card/50 backdrop-blur-sm">
-        <div className="flex items-center gap-2 sm:gap-3">
-          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center text-primary-foreground font-bold shadow-lg text-sm sm:text-base">
-            QL
-          </div>
-          <div className="hidden sm:block">
-            <h1 className="text-base sm:text-lg font-semibold">QueryLane</h1>
-          </div>
-        </div>
-        <div className="flex items-center gap-1 sm:gap-2">
-          <ModelSelector
-            selectedModel={selectedModel}
-            onModelChange={setSelectedModel}
-          />
-          <Button
-            onClick={toggleDarkMode}
-            variant="ghost"
-            size="icon"
-            className="rounded-xl hover:bg-secondary/80 transition-colors h-8 w-8 sm:h-10 sm:w-10"
-          >
-            {isDarkMode ? (
-              <Sun className="h-4 w-4 sm:h-5 sm:w-5" />
-            ) : (
-              <Moon className="h-4 w-4 sm:h-5 sm:w-5" />
-            )}
-          </Button>
-        </div>
-      </header>
 
       {/* Main Content */}
       {!hasMessages ? (
         <WelcomeScreen
           onSend={handleSend}
-          userName="Neo"
+          userName="Друг"
           selectedModel={selectedModel}
         />
       ) : (
@@ -275,6 +363,7 @@ export default function ChatPage() {
           />
         </>
       )}
-    </div>
+      </div>
+    </ThemeProvider>
   );
 }

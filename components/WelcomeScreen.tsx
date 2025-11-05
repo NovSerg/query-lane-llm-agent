@@ -32,10 +32,10 @@ export function WelcomeScreen({
         {/* Greeting */}
         <div className="text-center space-y-1.5 sm:space-y-2">
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-semibold tracking-tight">
-            Hi, {userName}
+            Привет!
           </h1>
           <p className="text-muted-foreground text-base sm:text-lg">
-            Your fast lane from question to answer
+            Готов помочь с любым вопросом
           </p>
         </div>
 
@@ -46,7 +46,7 @@ export function WelcomeScreen({
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="How can I help you today?"
+              placeholder="Чем могу помочь?"
               className={cn(
                 "w-full px-4 sm:px-6 py-3 sm:py-4 pr-12 sm:pr-14 text-sm sm:text-base rounded-xl",
                 "bg-card border border-border",

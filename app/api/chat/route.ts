@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { messages, model } = result.data;
+    const { messages, model, formatConfig } = result.data;
 
     if (!validateInputLength(messages)) {
       return new Response(
@@ -127,6 +127,7 @@ export async function POST(request: NextRequest) {
           for await (const chunk of provider.generateStream({
             messages,
             signal: request.signal,
+            formatConfig,
           })) {
             if (request.signal.aborted) {
               break;

@@ -91,19 +91,21 @@ export async function processNDJSONStream(
  * @param {Array<{role: string, content: string}>} messages - Array of chat messages
  * @param {AbortSignal} [signal] - Optional abort signal for cancelling the request
  * @param {string} [model] - Optional model identifier
+ * @param {import('./types').FormatConfig} [formatConfig] - Optional format configuration
  * @returns {Promise<Response>} Fetch response with NDJSON stream
  */
 export async function sendChatRequest(
   messages: { role: string; content: string }[],
   signal?: AbortSignal,
-  model?: string
+  model?: string,
+  formatConfig?: import('./types').FormatConfig
 ): Promise<Response> {
   return fetch('/api/chat', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ messages, model }),
+    body: JSON.stringify({ messages, model, formatConfig }),
     signal,
   });
 }

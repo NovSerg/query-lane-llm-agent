@@ -28,10 +28,10 @@ export function Toolbar({
             disabled={disabled}
             variant="outline"
             size="sm"
-            className="flex items-center gap-1.5 sm:gap-2 h-8 sm:h-9 px-2.5 sm:px-3"
+            className="flex items-center gap-1.5 sm:gap-2 h-8 sm:h-9 px-2.5 sm:px-3 hover:bg-accent hover:text-accent-foreground hover:scale-105 hover:shadow-md active:scale-95 transition-all duration-200"
           >
             <Square className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-            <span className="text-xs sm:text-sm">Stop</span>
+            <span className="text-xs sm:text-sm">Остановить</span>
           </Button>
         )}
 
@@ -41,10 +41,10 @@ export function Toolbar({
             disabled={disabled}
             variant="outline"
             size="sm"
-            className="flex items-center gap-1.5 sm:gap-2 h-8 sm:h-9 px-2.5 sm:px-3"
+            className="flex items-center gap-1.5 sm:gap-2 h-8 sm:h-9 px-2.5 sm:px-3 hover:bg-accent hover:text-accent-foreground hover:scale-105 hover:shadow-md active:scale-95 transition-all duration-200"
           >
             <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-            <span className="text-xs sm:text-sm">Clear</span>
+            <span className="text-xs sm:text-sm">Очистить</span>
           </Button>
         )}
 
@@ -54,10 +54,10 @@ export function Toolbar({
             disabled={disabled}
             variant="outline"
             size="sm"
-            className="flex items-center gap-1.5 sm:gap-2 h-8 sm:h-9 px-2.5 sm:px-3"
+            className="flex items-center gap-1.5 sm:gap-2 h-8 sm:h-9 px-2.5 sm:px-3 hover:bg-accent hover:text-accent-foreground hover:scale-105 hover:shadow-md active:scale-95 transition-all duration-200"
           >
             <Copy className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-            <span className="text-xs sm:text-sm">Copy</span>
+            <span className="text-xs sm:text-sm">Копировать</span>
           </Button>
         )}
       </div>

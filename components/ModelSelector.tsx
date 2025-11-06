@@ -6,13 +6,14 @@ import { cn } from '@/lib/utils';
 import { ChevronDown, Check } from 'lucide-react';
 
 const MODELS = [
-  { id: 'glm-4.6', name: 'GLM-4.6', description: 'Latest flagship model' },
-  { id: 'glm-4.5', name: 'GLM-4.5', description: 'Balanced performance' },
-  { id: 'glm-4.5-air', name: 'GLM-4.5-Air', description: 'Lightweight & fast' },
-  { id: 'glm-4.5-x', name: 'GLM-4.5-X', description: 'Extended capabilities' },
-  { id: 'glm-4.5-airx', name: 'GLM-4.5-AirX', description: 'Air extended' },
-  { id: 'glm-4.5-flash', name: 'GLM-4.5-Flash', description: 'Ultra-fast responses' },
-  { id: 'glm-4-32b-0414-128k', name: 'GLM-4-32B', description: '128K context' },
+  { id: 'anthropic/claude-3.5-haiku', name: 'Claude 3.5 Haiku', description: 'Fast, intelligent, affordable', provider: 'openrouter' },
+  { id: 'glm-4.6', name: 'GLM-4.6', description: 'Latest flagship model', provider: 'zai' },
+  { id: 'glm-4.5', name: 'GLM-4.5', description: 'Balanced performance', provider: 'zai' },
+  { id: 'glm-4.5-air', name: 'GLM-4.5-Air', description: 'Lightweight & fast', provider: 'zai' },
+  { id: 'glm-4.5-x', name: 'GLM-4.5-X', description: 'Extended capabilities', provider: 'zai' },
+  { id: 'glm-4.5-airx', name: 'GLM-4.5-AirX', description: 'Air extended', provider: 'zai' },
+  { id: 'glm-4.5-flash', name: 'GLM-4.5-Flash', description: 'Ultra-fast responses', provider: 'zai' },
+  { id: 'glm-4-32b-0414-128k', name: 'GLM-4-32B', description: '128K context', provider: 'zai' },
 ] as const;
 
 /**
@@ -79,7 +80,7 @@ export function ModelSelector({
         variant="ghost"
         size="sm"
         className={cn(
-          'gap-1.5 sm:gap-2 h-8 sm:h-9 px-2 sm:px-3 text-xs sm:text-sm font-medium',
+          'gap-1.5 sm:gap-2 h-8 sm:h-9 px-2 sm:px-3 text-xs sm:text-sm font-medium cursor-pointer',
           'hover:bg-accent hover:text-accent-foreground hover:scale-105 hover:shadow-md active:scale-95 transition-all duration-200'
         )}
       >
@@ -95,7 +96,7 @@ export function ModelSelector({
 
       {isOpen && (
         <div
-          className="absolute top-full right-0 mt-1 w-56 sm:w-64 rounded-lg shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200"
+          className="absolute top-full right-0 mt-1 w-48 sm:w-56 md:w-64 rounded-lg shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200"
           style={{
             zIndex: 999999,
             backgroundColor: isDark ? '#18181b' : '#ffffff',
@@ -103,7 +104,7 @@ export function ModelSelector({
             opacity: 1,
           }}
         >
-          <div className="p-1.5">
+          <div className="p-1 sm:p-1.5">
             {MODELS.map((model) => (
               <button
                 key={model.id}
@@ -112,19 +113,19 @@ export function ModelSelector({
                   setIsOpen(false);
                 }}
                 className={cn(
-                  'w-full flex items-start gap-2 px-3 py-2 rounded-md text-left transition-all duration-150',
+                  'w-full flex items-start gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-md text-left transition-all duration-150 cursor-pointer',
                   'hover:bg-secondary hover:shadow-md hover:scale-[1.02] active:scale-[0.98]',
                   selectedModel === model.id && 'bg-secondary/80'
                 )}
               >
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium">{model.name}</div>
-                  <div className="text-xs text-muted-foreground truncate">
+                  <div className="text-xs sm:text-sm font-medium">{model.name}</div>
+                  <div className="text-xs text-muted-foreground truncate hidden sm:block">
                     {model.description}
                   </div>
                 </div>
                 {selectedModel === model.id && (
-                  <Check className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+                  <Check className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary flex-shrink-0 mt-0.5" />
                 )}
               </button>
             ))}

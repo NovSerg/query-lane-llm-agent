@@ -120,10 +120,12 @@ export default function ChatPage() {
       await processNDJSONStream(response, {
         onMeta: () => {
           // Handle metadata if needed
+          console.log('[LLM Response] Meta received');
         },
         onToken: (chunk) => {
           if (chunk.content) {
             assistantMessage += chunk.content;
+            console.log('[LLM Response] Token:', chunk.content);
             setMessages((prev) => {
               const newMessages = [...prev];
               newMessages[newMessages.length - 1] = {
@@ -135,13 +137,19 @@ export default function ChatPage() {
           }
         },
         onDone: () => {
+          console.log('[LLM Response] Complete response received');
+          console.log('[LLM Response] Raw content:', assistantMessage);
+          
           // Parse response if format config is set
           if (formatConfig) {
+            console.log('[LLM Response] Processing with format:', formatConfig.format);
             const parsed = processResponse(
               assistantMessage,
               formatConfig.format,
               formatConfig.validationMode || 'lenient'
             );
+            
+            console.log('[LLM Response] Parsed result:', parsed);
 
             // Update message with parsed data
             setMessages((prev) => {
@@ -169,6 +177,8 @@ export default function ChatPage() {
                 templateName: customFormat?.name,
                 model: selectedModel,
               });
+              
+              console.log('[LLM Response] Saved to history with template:', customFormat?.name);
             }
           }
 
@@ -176,6 +186,7 @@ export default function ChatPage() {
           abortControllerRef.current = null;
         },
         onError: (chunk) => {
+          console.error('[LLM Response] Error:', chunk);
           setError(chunk.message || 'Unknown error occurred');
           setState('error');
           abortControllerRef.current = null;
@@ -264,40 +275,21 @@ export default function ChatPage() {
 
   return (
     <ThemeProvider isDarkMode={isDarkMode}>
-      <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
+      <div className="flex flex-col h-screen">
         {/* Header */}
-        <header style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '12px 24px',
-          borderBottom: '1px solid',
-          borderColor: isDarkMode ? '#27272a' : '#e4e4e7',
-          backdropFilter: 'blur(8px)',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <header className="flex items-center justify-between px-3 sm:px-4 md:px-6 py-3 border-b border-border backdrop-blur-md">
+          <div className="flex items-center gap-2 sm:gap-3">
             <ChatHistory
               currentChatId={currentChatId}
               onSelectChat={handleSelectChat}
               onNewChat={handleNewChat}
             />
-            <div style={{
-              width: '36px',
-              height: '36px',
-              borderRadius: '12px',
-              background: 'linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'white',
-              fontWeight: 'bold',
-              boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)',
-            }}>
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold shadow-lg shadow-blue-500/30">
               QL
             </div>
-            <h1 style={{ fontSize: '1.125rem', fontWeight: 600 }}>QueryLane</h1>
+            <h1 className="text-lg sm:text-xl font-semibold">QueryLane</h1>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div className="flex items-center gap-1 sm:gap-2">
             <ModelSelector
               selectedModel={selectedModel}
               onModelChange={setSelectedModel}
@@ -309,16 +301,8 @@ export default function ChatPage() {
             <IconButton
               onClick={toggleDarkMode}
               color="inherit"
-              sx={{
-                transition: 'all 0.2s',
-                '&:hover': {
-                  transform: 'scale(1.1)',
-                  boxShadow: 2,
-                },
-                '&:active': {
-                  transform: 'scale(0.95)',
-                },
-              }}
+              size="small"
+              className="transition-all duration-200 hover:scale-110 hover:shadow-lg active:scale-95"
             >
               {isDarkMode ? <Brightness7Icon /> : <Brightness4Icon />}
             </IconButton>
@@ -339,7 +323,7 @@ export default function ChatPage() {
 
           {/* State Message */}
           {state !== 'idle' && (
-            <div className="px-3 sm:px-4 py-2 text-center text-xs sm:text-sm text-muted-foreground">
+            <div className="px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 text-center text-xs sm:text-sm text-muted-foreground">
               {getStateMessage()}
             </div>
           )}

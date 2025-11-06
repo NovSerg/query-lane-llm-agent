@@ -148,7 +148,7 @@ export function ChatHistory({ currentChatId, onSelectChat, onNewChat }: ChatHist
         onClose={() => setIsOpen(false)}
         PaperProps={{
           sx: {
-            width: 300,
+            width: 280,
             bgcolor: 'background.paper',
           },
         }}
@@ -177,6 +177,7 @@ export function ChatHistory({ currentChatId, onSelectChat, onNewChat }: ChatHist
             variant="outlined"
             startIcon={<AddIcon />}
             onClick={handleNewChat}
+            size="small"
           >
             Новый чат
           </Button>
@@ -188,7 +189,7 @@ export function ChatHistory({ currentChatId, onSelectChat, onNewChat }: ChatHist
         <List sx={{ flex: 1, overflow: 'auto', py: 0 }}>
           {chats.length === 0 ? (
             <Box p={3} textAlign="center">
-              <ChatBubbleOutlineIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 1 }} />
+              <ChatBubbleOutlineIcon sx={{ fontSize: 40, color: 'text.secondary', mb: 1 }} />
               <Typography variant="body2" color="text.secondary">
                 Нет сохранённых чатов
               </Typography>
@@ -213,7 +214,7 @@ export function ChatHistory({ currentChatId, onSelectChat, onNewChat }: ChatHist
               >
                 <ListItemButton
                   onClick={() => handleSelectChat(chat.id)}
-                  sx={{ pr: 6 }}
+                  sx={{ pr: 5 }}
                 >
                   <ListItemText
                     primary={chat.title}

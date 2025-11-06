@@ -29,6 +29,7 @@ export function FormatSelector({
     } else {
       onFormatChange({
         format,
+        systemPrompt: `Return a structured ${format} response`,
         validationMode: 'lenient',
       });
     }
@@ -40,9 +41,7 @@ export function FormatSelector({
 
     onFormatChange({
       format: template.format,
-      schema: template.schema,
-      templateId: template.id,
-      customPrompt: template.systemPrompt,
+      systemPrompt: template.systemPrompt,
       validationMode: 'lenient',
     });
 
@@ -57,13 +56,13 @@ export function FormatSelector({
         onClick={() => setIsOpen(!isOpen)}
         variant={currentFormat ? 'default' : 'ghost'}
         size="icon"
-        className="rounded-xl hover:bg-secondary/80 transition-colors h-8 w-8 sm:h-10 sm:w-10"
+        className="rounded-xl hover:bg-secondary/80 transition-colors h-7 w-7 sm:h-8 sm:w-8 md:h-10 md:w-10"
         title="Format Settings"
       >
-        {currentFormat?.format === 'json' || currentFormat?.format === 'structured' ? (
-          <FileJson2 className="h-4 w-4 sm:h-5 sm:w-5" />
+        {currentFormat?.format === 'json' ? (
+          <FileJson2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5" />
         ) : (
-          <Settings2 className="h-4 w-4 sm:h-5 sm:w-5" />
+          <Settings2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5" />
         )}
       </Button>
 
@@ -76,22 +75,22 @@ export function FormatSelector({
           />
 
           {/* Dropdown */}
-          <Card className="absolute right-0 top-12 z-50 w-96 max-w-[calc(100vw-2rem)] p-4 shadow-2xl border-2">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-lg">Output Format</h3>
+          <Card className="absolute right-0 top-12 sm:top-12 z-50 w-80 sm:w-96 max-w-[calc(100vw-2rem)] p-3 sm:p-4 shadow-2xl border-2">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <h3 className="font-semibold text-base sm:text-lg">Output Format</h3>
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8"
+                className="h-7 w-7 sm:h-8 sm:w-8"
                 onClick={() => setIsOpen(false)}
               >
-                <X className="h-4 w-4" />
+                <X className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               </Button>
             </div>
 
             {/* Format Type Selection */}
-            <div className="space-y-2 mb-4">
-              <label className="text-sm font-medium text-muted-foreground">
+            <div className="space-y-2 mb-3 sm:mb-4">
+              <label className="text-xs sm:text-sm font-medium text-muted-foreground">
                 Base Format
               </label>
               <div className="grid grid-cols-2 gap-2">
@@ -100,28 +99,28 @@ export function FormatSelector({
                   className="justify-start"
                   onClick={() => handleFormatSelect('text')}
                 >
-                  <FileText className="h-4 w-4 mr-2" />
-                  Text
+                  <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                  <span className="text-xs sm:text-sm">Text</span>
                 </Button>
                 <Button
                   variant={selectedFormat === 'json' ? 'default' : 'outline'}
                   className="justify-start"
                   onClick={() => handleFormatSelect('json')}
                 >
-                  <FileJson2 className="h-4 w-4 mr-2" />
-                  JSON
+                  <FileJson2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                  <span className="text-xs sm:text-sm">JSON</span>
                 </Button>
               </div>
             </div>
 
             {/* Template Selection */}
             {selectedFormat !== 'text' && (
-              <div className="space-y-3">
-                <label className="text-sm font-medium text-muted-foreground">
+              <div className="space-y-2 sm:space-y-3">
+                <label className="text-xs sm:text-sm font-medium text-muted-foreground">
                   Templates
                 </label>
 
-                <div className="max-h-96 overflow-y-auto space-y-3">
+                <div className="max-h-80 sm:max-h-96 overflow-y-auto space-y-2 sm:space-y-3">
                   {categories.map(category => {
                     const templates = FORMAT_TEMPLATES.filter(
                       t => (t.category || 'custom') === category
@@ -136,16 +135,16 @@ export function FormatSelector({
                           <button
                             key={template.id}
                             onClick={() => handleTemplateSelect(template)}
-                            className={`w-full text-left p-3 rounded-lg border-2 transition-all hover:border-primary/50 ${
+                            className={`w-full text-left p-2 sm:p-3 rounded-lg border-2 transition-all hover:border-primary/50 ${
                               selectedTemplate?.id === template.id
                                 ? 'border-primary bg-primary/5'
                                 : 'border-border'
                             }`}
                           >
-                            <div className="font-medium text-sm">
+                            <div className="font-medium text-xs sm:text-sm">
                               {template.name}
                             </div>
-                            <div className="text-xs text-muted-foreground mt-1">
+                            <div className="text-xs text-muted-foreground mt-0.5 sm:mt-1">
                               {template.description}
                             </div>
                           </button>
@@ -159,8 +158,8 @@ export function FormatSelector({
 
             {/* Current Selection Info */}
             {selectedTemplate && (
-              <div className="mt-4 p-3 bg-secondary/30 rounded-lg">
-                <div className="text-xs font-medium text-muted-foreground mb-1">
+              <div className="mt-3 sm:mt-4 p-2 sm:p-3 bg-secondary/30 rounded-lg">
+                <div className="text-xs font-medium text-muted-foreground mb-0.5 sm:mb-1">
                   Selected
                 </div>
                 <div className="text-sm font-semibold">

@@ -76,11 +76,12 @@ export function FormatEditor({ format, onSave, onCancel }: FormatEditorProps) {
       PaperProps={{
         sx: {
           maxHeight: '90vh',
+          mx: 1, // Add horizontal margin on mobile
         },
       }}
     >
       <DialogTitle>
-        <Box display="flex" alignItems="center" justifyContent="space-between">
+        <Box display="flex" alignItems="center" justifyContent="space-between" flexDirection={{ xs: 'column', sm: 'row' }} gap={1}>
           <Typography variant="h6">
             {format ? 'Редактировать формат' : 'Создать новый формат'}
           </Typography>
@@ -90,8 +91,8 @@ export function FormatEditor({ format, onSave, onCancel }: FormatEditorProps) {
         </Box>
       </DialogTitle>
 
-      <DialogContent dividers>
-        <Box display="flex" flexDirection="column" gap={3}>
+      <DialogContent dividers sx={{ px: { xs: 2, sm: 3 } }}>
+        <Box display="flex" flexDirection="column" gap={2.5}>
           {/* Name */}
           <TextField
             label="Название"
@@ -100,6 +101,7 @@ export function FormatEditor({ format, onSave, onCancel }: FormatEditorProps) {
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Мой формат"
+            size="small"
           />
 
           {/* Description */}
@@ -109,6 +111,7 @@ export function FormatEditor({ format, onSave, onCancel }: FormatEditorProps) {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Краткое описание формата"
+            size="small"
           />
 
           {/* Format Type */}
@@ -121,11 +124,12 @@ export function FormatEditor({ format, onSave, onCancel }: FormatEditorProps) {
               exclusive
               onChange={(_, value) => value && setFormatType(value)}
               fullWidth
+              size="small"
             >
-              <ToggleButton value="text">ТЕКСТ</ToggleButton>
-              <ToggleButton value="json">JSON</ToggleButton>
-              <ToggleButton value="xml">XML</ToggleButton>
-              <ToggleButton value="custom">СВОЙ</ToggleButton>
+              <ToggleButton value="text" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>ТЕКСТ</ToggleButton>
+              <ToggleButton value="json" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>JSON</ToggleButton>
+              <ToggleButton value="xml" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>XML</ToggleButton>
+              <ToggleButton value="custom" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>СВОЙ</ToggleButton>
             </ToggleButtonGroup>
           </Box>
 
@@ -140,10 +144,11 @@ export function FormatEditor({ format, onSave, onCancel }: FormatEditorProps) {
               value={systemPrompt}
               onChange={(e) => setSystemPrompt(e.target.value)}
               placeholder="Введите системный промпт, который будет инструктировать ИИ как форматировать ответы..."
+              size="small"
               sx={{
                 '& textarea': {
                   fontFamily: 'monospace',
-                  fontSize: '0.875rem',
+                  fontSize: { xs: '0.75rem', sm: '0.875rem' },
                 },
               }}
             />
@@ -162,10 +167,11 @@ export function FormatEditor({ format, onSave, onCancel }: FormatEditorProps) {
               value={exampleFormat}
               onChange={(e) => setExampleFormat(e.target.value)}
               placeholder="Покажите пример того, как должен выглядеть ответ..."
+              size="small"
               sx={{
                 '& textarea': {
                   fontFamily: 'monospace',
-                  fontSize: '0.875rem',
+                  fontSize: { xs: '0.75rem', sm: '0.875rem' },
                 },
               }}
             />
@@ -176,11 +182,11 @@ export function FormatEditor({ format, onSave, onCancel }: FormatEditorProps) {
         </Box>
       </DialogContent>
 
-      <DialogActions sx={{ p: 2 }}>
-        <Button onClick={onCancel} variant="outlined">
+      <DialogActions sx={{ p: { xs: 1.5, sm: 2 }, flexDirection: { xs: 'column', sm: 'row' }, gap: 1 }}>
+        <Button onClick={onCancel} variant="outlined" sx={{ width: { xs: '100%', sm: 'auto' } }}>
           Отмена
         </Button>
-        <Button onClick={handleSave} variant="contained" startIcon={<SaveIcon />}>
+        <Button onClick={handleSave} variant="contained" startIcon={<SaveIcon />} sx={{ width: { xs: '100%', sm: 'auto' } }}>
           Сохранить
         </Button>
       </DialogActions>

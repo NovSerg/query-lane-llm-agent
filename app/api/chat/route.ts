@@ -105,10 +105,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const apiKey = process.env.ZAI_API_KEY;
-    if (!apiKey) {
+    const zaiKey = process.env.ZAI_API_KEY || '';
+    const openRouterKey = process.env.OPENROUTER_API_KEY || '';
+
+    if (!zaiKey && !openRouterKey) {
       return new Response(
-        `{"type":"error","code":"CONFIGURATION_ERROR","message":"ZAI_API_KEY not configured"}\n`,
+        `{"type":"error","code":"CONFIGURATION_ERROR","message":"No API keys configured"}\n`,
         {
           status: 500,
           headers: {
@@ -118,7 +120,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const provider = createProvider(apiKey, model);
+    const provider = createProvider(zaiKey, openRouterKey, model);
     const encoder = new TextEncoder();
 
     const stream = new ReadableStream({

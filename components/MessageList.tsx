@@ -63,38 +63,38 @@ export function MessageList({ messages, className }: MessageListProps) {
       <div
         ref={scrollViewportRef}
         onScroll={handleScroll}
-        className={cn('h-full overflow-y-auto p-3 sm:p-4 md:p-6', className)}
+        className={cn('h-full overflow-y-auto p-2 sm:p-3 md:p-4 lg:p-6', className)}
       >
-        <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6">
+        <div className="max-w-3xl sm:max-w-4xl mx-auto space-y-3 sm:space-y-4 md:space-y-6">
           {messages.map((message, index) => (
             <div
               key={index}
               className={cn(
-                'flex gap-2 sm:gap-3 group',
+                'flex gap-2 sm:gap-3 md:gap-4 group',
                 message.role === 'user' ? 'flex-row-reverse' : 'flex-row'
               )}
             >
               {/* Avatar */}
               <div
                 className={cn(
-                  'flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center',
+                  'flex-shrink-0 w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 rounded-full flex items-center justify-center',
                   message.role === 'user'
                     ? 'bg-primary text-primary-foreground'
                     : 'bg-muted text-muted-foreground'
                 )}
               >
                 {message.role === 'user' ? (
-                  <User className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  <User className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4" />
                 ) : (
-                  <Bot className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  <Bot className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4" />
                 )}
               </div>
 
               {/* Message content */}
-              <div className="flex-1 space-y-2">
+              <div className="flex-1 min-w-0 space-y-2">
                 <Card
                   className={cn(
-                    'p-3 sm:p-4 shadow-sm transition-shadow hover:shadow-md',
+                    'p-2 sm:p-3 md:p-4 shadow-sm transition-shadow hover:shadow-md',
                     message.role === 'user'
                       ? 'bg-primary/10 border-primary/20'
                       : 'bg-card'
@@ -103,7 +103,7 @@ export function MessageList({ messages, className }: MessageListProps) {
                   {message.role === 'assistant' ? (
                     <MarkdownMessage content={message.content || '_Думаю..._'} />
                   ) : (
-                    <div className="text-sm sm:text-base whitespace-pre-wrap break-words">
+                    <div className="text-xs sm:text-sm md:text-base whitespace-pre-wrap break-words">
                       {message.content}
                     </div>
                   )}
@@ -131,7 +131,7 @@ export function MessageList({ messages, className }: MessageListProps) {
           onClick={() => scrollToBottom(true)}
           sx={{
             position: 'absolute',
-            bottom: 24,
+            bottom: 16,
             left: '50%',
             transform: 'translateX(-50%)',
             boxShadow: 3,

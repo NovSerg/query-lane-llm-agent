@@ -12,7 +12,7 @@ interface MarkdownMessageProps {
 
 export function MarkdownMessage({ content, className }: MarkdownMessageProps) {
   return (
-    <div className={cn('prose prose-sm sm:prose-base max-w-none', className)}>
+    <div className={cn('prose prose-xs sm:prose-sm md:prose-base max-w-none', className)}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeHighlight]}
@@ -24,13 +24,13 @@ export function MarkdownMessage({ content, className }: MarkdownMessageProps) {
 
             if (isInline) {
               return (
-                <code className="bg-muted px-1 sm:px-1.5 py-0.5 rounded text-xs sm:text-sm font-mono" {...props}>
+                <code className="bg-muted px-1 sm:px-1.5 py-0.5 rounded text-xs sm:text-sm font-mono break-words" {...props}>
                   {children}
                 </code>
               );
             }
             return (
-              <code className={cn(className, 'text-xs sm:text-sm')} {...props}>
+              <code className={cn(className, 'text-xs sm:text-sm break-all')} {...props}>
                 {children}
               </code>
             );
@@ -38,7 +38,7 @@ export function MarkdownMessage({ content, className }: MarkdownMessageProps) {
           // Links open in new tab
           a({ children, href }) {
             return (
-              <a href={href} target="_blank" rel="noopener noreferrer">
+              <a href={href} target="_blank" rel="noopener noreferrer" className="break-all">
                 {children}
               </a>
             );

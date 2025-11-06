@@ -24,20 +24,45 @@ const getThemeOptions = (mode: 'light' | 'dark'): ThemeOptions => ({
   typography: {
     fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
     h1: {
-      fontSize: '2rem',
-      fontWeight: 600,
-    },
-    h2: {
       fontSize: '1.5rem',
       fontWeight: 600,
+      '@media (min-width: 768px)': {
+        fontSize: '2rem',
+      },
     },
-    h3: {
+    h2: {
       fontSize: '1.25rem',
       fontWeight: 600,
+      '@media (min-width: 768px)': {
+        fontSize: '1.5rem',
+      },
+    },
+    h3: {
+      fontSize: '1.125rem',
+      fontWeight: 600,
+      '@media (min-width: 768px)': {
+        fontSize: '1.25rem',
+      },
     },
     button: {
       textTransform: 'none',
       fontWeight: 500,
+      fontSize: '0.875rem',
+      '@media (min-width: 768px)': {
+        fontSize: '1rem',
+      },
+    },
+    body1: {
+      fontSize: '0.875rem',
+      '@media (min-width: 768px)': {
+        fontSize: '1rem',
+      },
+    },
+    body2: {
+      fontSize: '0.75rem',
+      '@media (min-width: 768px)': {
+        fontSize: '0.875rem',
+      },
     },
   },
   shape: {
@@ -48,8 +73,14 @@ const getThemeOptions = (mode: 'light' | 'dark'): ThemeOptions => ({
       styleOverrides: {
         root: {
           borderRadius: 12,
-          padding: '8px 16px',
+          padding: '6px 12px',
           boxShadow: 'none',
+          fontSize: '0.875rem',
+          minHeight: '44px', // Better touch target for mobile
+          '@media (min-width: 768px)': {
+            padding: '8px 16px',
+            fontSize: '1rem',
+          },
           '&:hover': {
             boxShadow: 'none',
           },
@@ -64,10 +95,13 @@ const getThemeOptions = (mode: 'light' | 'dark'): ThemeOptions => ({
     MuiCard: {
       styleOverrides: {
         root: {
-          borderRadius: 16,
+          borderRadius: 12,
           boxShadow: mode === 'dark'
             ? '0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2)'
             : '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+          '@media (min-width: 768px)': {
+            borderRadius: 16,
+          },
         },
       },
     },
@@ -75,6 +109,9 @@ const getThemeOptions = (mode: 'light' | 'dark'): ThemeOptions => ({
       styleOverrides: {
         root: {
           borderRadius: 12,
+          '@media (min-width: 768px)': {
+            borderRadius: 12,
+          },
         },
         elevation1: {
           boxShadow: mode === 'dark'
@@ -86,7 +123,12 @@ const getThemeOptions = (mode: 'light' | 'dark'): ThemeOptions => ({
     MuiDialog: {
       styleOverrides: {
         paper: {
-          borderRadius: 16,
+          borderRadius: 12,
+          margin: '16px', // Add margin for mobile
+          '@media (min-width: 768px)': {
+            borderRadius: 16,
+            margin: '32px',
+          },
         },
       },
     },
@@ -103,6 +145,22 @@ const getThemeOptions = (mode: 'light' | 'dark'): ThemeOptions => ({
       styleOverrides: {
         root: {
           borderRadius: 12,
+          padding: '8px', // Better touch target for mobile
+          '@media (min-width: 768px)': {
+            padding: '8px',
+          },
+        },
+      },
+    },
+    MuiDrawer: {
+      styleOverrides: {
+        paper: {
+          '@media (max-width: 767px)': {
+            width: '280px',
+          },
+          '@media (min-width: 768px)': {
+            width: '300px',
+          },
         },
       },
     },

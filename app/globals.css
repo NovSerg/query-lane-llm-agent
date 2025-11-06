@@ -297,4 +297,52 @@
     background: hsl(var(--muted)) !important;
     color: hsl(var(--foreground)) !important;
   }
+
+  /* Mobile-specific optimizations */
+  @media (max-width: 640px) {
+    /* Reduce font sizes for better mobile readability */
+    html {
+      font-size: 14px;
+    }
+    
+    /* Better touch targets for mobile */
+    button, .btn {
+      min-height: 44px;
+      min-width: 44px;
+    }
+    
+    /* Improved scrolling on mobile */
+    body {
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+    }
+    
+    /* Better form inputs on mobile */
+    input, textarea {
+      font-size: 16px; /* Prevents zoom on iOS */
+    }
+    
+    /* Reduce animations on mobile for better performance */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  }
+
+  /* Tablet-specific optimizations */
+  @media (min-width: 641px) and (max-width: 1024px) {
+    html {
+      font-size: 15px;
+    }
+  }
+
+  /* Desktop optimizations */
+  @media (min-width: 1025px) {
+    html {
+      font-size: 16px;
+    }
+  }
 }

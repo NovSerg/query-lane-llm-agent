@@ -19,7 +19,9 @@ export function ThemeProvider({ children, isDarkMode }: ThemeProviderProps) {
   return (
     <MuiThemeProvider theme={theme}>
       <CssBaseline />
-      {children}
+      <div className="min-h-screen flex flex-col">
+        {children}
+      </div>
     </MuiThemeProvider>
   );
 }

@@ -53,7 +53,7 @@ export function SchemaBuilder({ onSave, onCancel }: SchemaBuilderProps) {
 
     const config: FormatConfig = {
       format: 'json',
-      schema,
+      systemPrompt: 'Return a structured JSON response based on the schema',
       validationMode: 'lenient',
     };
 
@@ -61,17 +61,17 @@ export function SchemaBuilder({ onSave, onCancel }: SchemaBuilderProps) {
   };
 
   return (
-    <Card className="p-4">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="font-semibold">Custom Schema Builder</h3>
+    <Card className="p-3 sm:p-4">
+      <div className="flex items-center justify-between mb-3 sm:mb-4">
+        <h3 className="font-semibold text-sm sm:text-base">Custom Schema Builder</h3>
         <Button variant="ghost" size="icon" onClick={onCancel}>
-          <X className="h-4 w-4" />
+          <X className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
         </Button>
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-2 sm:space-y-3">
         {fields.map((field, index) => (
-          <div key={index} className="grid grid-cols-12 gap-2 items-start">
+          <div key={index} className="grid grid-cols-12 gap-1 sm:gap-2 items-start">
             <input
               type="text"
               placeholder="Key"
@@ -79,14 +79,15 @@ export function SchemaBuilder({ onSave, onCancel }: SchemaBuilderProps) {
               onChange={e =>
                 updateField(index, { key: e.target.value })
               }
-              className="col-span-3 px-3 py-2 text-sm border rounded-lg bg-background"
+              className="col-span-3 sm:col-span-3 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border rounded-lg bg-background"
             />
             <select
               value={field.type}
               onChange={e =>
                 updateField(index, { type: e.target.value })
               }
-              className="col-span-2 px-3 py-2 text-sm border rounded-lg bg-background"
+              className="col-span-2 sm:col-span-2 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border rounded-lg bg-background"
+              aria-label="Field type"
             >
               <option value="string">string</option>
               <option value="number">number</option>
@@ -101,29 +102,29 @@ export function SchemaBuilder({ onSave, onCancel }: SchemaBuilderProps) {
               onChange={e =>
                 updateField(index, { description: e.target.value })
               }
-              className="col-span-6 px-3 py-2 text-sm border rounded-lg bg-background"
+              className="col-span-5 sm:col-span-6 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border rounded-lg bg-background"
             />
             <Button
               variant="ghost"
               size="icon"
               onClick={() => removeField(index)}
-              className="col-span-1"
+              className="col-span-1 sm:col-span-1"
             >
-              <X className="h-4 w-4" />
+              <X className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             </Button>
           </div>
         ))}
       </div>
 
-      <div className="flex gap-2 mt-4">
+      <div className="flex flex-col sm:flex-row gap-2 mt-3 sm:mt-4">
         <Button
           variant="outline"
           size="sm"
           onClick={addField}
           className="flex-1"
         >
-          <Plus className="h-4 w-4 mr-2" />
-          Add Field
+          <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+          <span className="text-xs sm:text-sm">Add Field</span>
         </Button>
         <Button
           variant="default"
@@ -131,8 +132,8 @@ export function SchemaBuilder({ onSave, onCancel }: SchemaBuilderProps) {
           onClick={handleSave}
           className="flex-1"
         >
-          <Save className="h-4 w-4 mr-2" />
-          Save Schema
+          <Save className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+          <span className="text-xs sm:text-sm">Save Schema</span>
         </Button>
       </div>
     </Card>

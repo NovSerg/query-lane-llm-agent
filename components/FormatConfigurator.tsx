@@ -40,17 +40,6 @@ export function FormatConfigurator({
   const [isEditing, setIsEditing] = useState(false);
   const [pinnedFormatId, setPinnedFormatId] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadFormats();
-    const pinned = customFormats.getPinned();
-    setPinnedFormatId(pinned?.id || null);
-
-    // Auto-apply pinned format on mount
-    if (pinned && !currentConfig) {
-      applyFormat(pinned);
-    }
-  }, []);
-
   const loadFormats = () => {
     setFormats(customFormats.getAll());
   };
@@ -65,6 +54,17 @@ export function FormatConfigurator({
       validationMode: 'lenient',
     });
   };
+
+  useEffect(() => {
+    loadFormats();
+    const pinned = customFormats.getPinned();
+    setPinnedFormatId(pinned?.id || null);
+
+    // Auto-apply pinned format on mount
+    if (pinned && !currentConfig) {
+      applyFormat(pinned);
+    }
+  }, []);
 
   const handleSelectFormat = (format: CustomFormat) => {
     applyFormat(format);
@@ -166,9 +166,15 @@ export function FormatConfigurator({
         onClose={() => setIsOpen(false)}
         maxWidth="sm"
         fullWidth
+        PaperProps={{
+          sx: {
+            mx: 1, // Add horizontal margin on mobile
+            maxHeight: '80vh', // Limit height on mobile
+          }
+        }}
       >
         <DialogTitle>
-          <Box display="flex" alignItems="center" justifyContent="space-between">
+          <Box display="flex" alignItems="center" justifyContent="space-between" flexDirection={{ xs: 'column', sm: 'row' }} gap={1}>
             <Typography variant="h6">Форматы ответов</Typography>
             <Box display="flex" gap={1}>
               <Button
@@ -186,14 +192,14 @@ export function FormatConfigurator({
           </Box>
         </DialogTitle>
 
-        <DialogContent>
+        <DialogContent sx={{ px: { xs: 2, sm: 3 } }}>
           {selectedFormat && (
             <Card
               variant="outlined"
               sx={{ mb: 2, bgcolor: 'primary.50', borderColor: 'primary.main' }}
             >
-              <CardContent>
-                <Box display="flex" alignItems="center" justifyContent="space-between">
+              <CardContent sx={{ px: { xs: 2, sm: 3 } }}>
+                <Box display="flex" alignItems="center" justifyContent="space-between" flexDirection={{ xs: 'column', sm: 'row' }} gap={1}>
                   <Box>
                     <Typography variant="subtitle2">Активный формат</Typography>
                     <Typography variant="body2" color="text.secondary">
@@ -225,8 +231,8 @@ export function FormatConfigurator({
                   },
                 }}
               >
-                <CardContent>
-                  <Box display="flex" alignItems="start" justifyContent="space-between">
+                <CardContent sx={{ px: { xs: 2, sm: 3 }, py: { xs: 2, sm: 2.5 } }}>
+                  <Box display="flex" alignItems="start" justifyContent="space-between" flexDirection={{ xs: 'column', sm: 'row' }} gap={1}>
                     <Box
                       flex={1}
                       onClick={() => handleSelectFormat(format)}
@@ -250,7 +256,7 @@ export function FormatConfigurator({
                       />
                     </Box>
 
-                    <Box display="flex" gap={0.5}>
+                    <Box display="flex" gap={0.5} flexDirection={{ xs: 'row', sm: 'column' }}>
                       <IconButton
                         size="small"
                         onClick={(e) => {

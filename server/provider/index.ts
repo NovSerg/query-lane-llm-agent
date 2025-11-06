@@ -33,7 +33,7 @@ export function createProvider(
     if (!openRouterKey) {
       throw new Error('OpenRouter API key is required for this model');
     }
-    return new OpenRouterAdapter(openRouterKey, model || 'anthropic/claude-3.5-haiku');
+    return new OpenRouterAdapter(openRouterKey, model || 'anthropic/claude-haiku-4.5');
   }
 
   if (!zaiKey) {

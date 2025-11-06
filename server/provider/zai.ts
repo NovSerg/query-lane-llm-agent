@@ -1,4 +1,4 @@
-import { ProviderAdapter, StreamChunk, Message, FormatConfig } from '../../lib/types';
+import { ProviderAdapter, StreamChunk, Message, FormatConfig, LLMParameters } from '../../lib/types';
 
 /**
  * Z.AI (Zhipu AI) provider adapter
@@ -34,16 +34,19 @@ export class ZAIAdapter implements ProviderAdapter {
    * @param {Message[]} params.messages - Chat messages
    * @param {AbortSignal} [params.signal] - Optional abort signal
    * @param {FormatConfig} [params.formatConfig] - Output format configuration
+   * @param {LLMParameters} [params.parameters] - LLM parameters
    * @yields {StreamChunk} Stream chunks
    */
   async *generateStream({
     messages,
     signal,
     formatConfig,
+    parameters,
   }: {
     messages: Message[];
     signal?: AbortSignal;
     formatConfig?: FormatConfig;
+    parameters?: LLMParameters;
   }): AsyncIterable<StreamChunk> {
     // Check for abort signal
     if (signal?.aborted) {
@@ -88,11 +91,26 @@ export class ZAIAdapter implements ProviderAdapter {
         }
       }
 
-      const requestBody = {
+      const requestBody: Record<string, unknown> = {
         model: this.model,
         messages: apiMessages,
         stream: true,
       };
+
+      // Add LLM parameters if provided
+      if (parameters) {
+        if (parameters.temperature !== undefined) {
+          requestBody.temperature = parameters.temperature;
+        }
+        if (parameters.top_p !== undefined) {
+          requestBody.top_p = parameters.top_p;
+        }
+        if (parameters.max_tokens !== undefined) {
+          requestBody.max_tokens = parameters.max_tokens;
+        }
+        // Note: Z.AI might not support all parameters
+        // frequency_penalty, presence_penalty, seed, top_k might need API docs check
+      }
 
       const url = 'https://api.z.ai/api/coding/paas/v4/chat/completions';
 

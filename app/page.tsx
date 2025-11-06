@@ -1,17 +1,16 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Message, FormatConfig } from '@/lib/types';
+import { Message, Agent } from '@/lib/types';
 import { sendChatRequest, processNDJSONStream } from '@/lib/ndjson-client';
 import { processResponse } from '@/lib/json-parser';
 import { responseHistory } from '@/lib/response-history';
-import { customFormats } from '@/lib/custom-formats';
+import { agentStorage } from '@/lib/agent-storage';
 import { MessageList } from '@/components/MessageList';
 import { Composer } from '@/components/Composer';
 import { Toolbar } from '@/components/Toolbar';
 import { WelcomeScreen } from '@/components/WelcomeScreen';
-import { ModelSelector } from '@/components/ModelSelector';
-import { FormatConfigurator } from '@/components/FormatConfigurator';
+import { AgentManager } from '@/components/AgentManager';
 import { ChatHistory } from '@/components/ChatHistory';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import {
@@ -33,8 +32,7 @@ export default function ChatPage() {
   const [state, setState] = useState<ChatState>('idle');
   const [error, setError] = useState<string | null>(null);
   const [isDarkMode, setIsDarkMode] = useState(true); // default to dark
-  const [selectedModel, setSelectedModel] = useState('glm-4.5-flash');
-  const [formatConfig, setFormatConfig] = useState<FormatConfig | null>(null);
+  const [activeAgent, setActiveAgent] = useState<Agent | null>(null);
   const [mounted, setMounted] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -49,10 +47,10 @@ export default function ChatPage() {
       setIsDarkMode(prefersDark);
     }
 
-    // Load selected model
-    const savedModel = localStorage.getItem('querylane.model');
-    if (savedModel) {
-      setSelectedModel(savedModel);
+    // Load active agent
+    const agent = agentStorage.getActiveAgent();
+    if (agent) {
+      setActiveAgent(agent);
     }
 
     // Load current chat or create new one
@@ -84,15 +82,8 @@ export default function ChatPage() {
     }
   }, [isDarkMode, mounted]);
 
-  // Save selected model whenever it changes
-  useEffect(() => {
-    if (mounted) {
-      localStorage.setItem('querylane.model', selectedModel);
-    }
-  }, [selectedModel, mounted]);
-
   const handleSend = async (userMessage: string) => {
-    if (state === 'streaming') return;
+    if (state === 'streaming' || !activeAgent) return;
 
     const newMessage: Message = { role: 'user', content: userMessage };
     const updatedMessages = [...messages, newMessage];
@@ -104,11 +95,29 @@ export default function ChatPage() {
       const controller = new AbortController();
       abortControllerRef.current = controller;
 
+      // Prepare messages with agent's system prompt
+      let messagesToSend = [...updatedMessages];
+
+      // Add agent's system prompt as first message if it exists and not already added
+      if (activeAgent.systemPrompt && activeAgent.systemPrompt.trim()) {
+        const hasSystemMessage = messagesToSend.some(msg => msg.role === 'system');
+
+        if (!hasSystemMessage) {
+          // Add system prompt at the beginning
+          messagesToSend = [
+            { role: 'system', content: activeAgent.systemPrompt },
+            ...messagesToSend
+          ];
+        }
+      }
+
+      // Use agent's configuration
       const response = await sendChatRequest(
-        updatedMessages,
+        messagesToSend,
         controller.signal,
-        selectedModel,
-        formatConfig || undefined
+        activeAgent.model,
+        activeAgent.formatConfig,
+        activeAgent.parameters
       );
       setState('streaming');
 
@@ -139,16 +148,17 @@ export default function ChatPage() {
         onDone: () => {
           console.log('[LLM Response] Complete response received');
           console.log('[LLM Response] Raw content:', assistantMessage);
-          
+
           // Parse response if format config is set
-          if (formatConfig) {
+          const formatConfig = activeAgent.formatConfig;
+          if (formatConfig && formatConfig.format !== 'text') {
             console.log('[LLM Response] Processing with format:', formatConfig.format);
             const parsed = processResponse(
               assistantMessage,
               formatConfig.format,
               formatConfig.validationMode || 'lenient'
             );
-            
+
             console.log('[LLM Response] Parsed result:', parsed);
 
             // Update message with parsed data
@@ -167,18 +177,16 @@ export default function ChatPage() {
             });
 
             // Save to history if valid
-            if (parsed.isValid && formatConfig.customFormatId) {
-              const customFormat = customFormats.getById(formatConfig.customFormatId);
-
+            if (parsed.isValid) {
               responseHistory.add({
                 prompt: userMessage,
                 parsedResponse: parsed,
-                templateId: formatConfig.customFormatId,
-                templateName: customFormat?.name,
-                model: selectedModel,
+                templateId: activeAgent.id,
+                templateName: activeAgent.name,
+                model: activeAgent.model,
               });
-              
-              console.log('[LLM Response] Saved to history with template:', customFormat?.name);
+
+              console.log('[LLM Response] Saved to history with agent:', activeAgent.name);
             }
           }
 
@@ -290,14 +298,7 @@ export default function ChatPage() {
             <h1 className="text-lg sm:text-xl font-semibold">QueryLane</h1>
           </div>
           <div className="flex items-center gap-1 sm:gap-2">
-            <ModelSelector
-              selectedModel={selectedModel}
-              onModelChange={setSelectedModel}
-            />
-            <FormatConfigurator
-              onFormatChange={setFormatConfig}
-              currentConfig={formatConfig}
-            />
+            <AgentManager activeAgent={activeAgent} onAgentChange={setActiveAgent} />
             <IconButton
               onClick={toggleDarkMode}
               color="inherit"
@@ -314,7 +315,7 @@ export default function ChatPage() {
         <WelcomeScreen
           onSend={handleSend}
           userName="Друг"
-          selectedModel={selectedModel}
+          selectedModel={activeAgent?.model || 'glm-4.5-flash'}
         />
       ) : (
         <>

@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { messages, model, formatConfig } = result.data;
+    const { messages, model, formatConfig, parameters } = result.data;
 
     if (!validateInputLength(messages)) {
       return new Response(
@@ -130,6 +130,7 @@ export async function POST(request: NextRequest) {
             messages,
             signal: request.signal,
             formatConfig,
+            parameters,
           })) {
             if (request.signal.aborted) {
               break;

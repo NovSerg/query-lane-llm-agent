@@ -21,6 +21,7 @@ export const MessageSchema = z.object({
  * Available AI models
  */
 export const AVAILABLE_MODELS = [
+  'anthropic/claude-haiku-4.5',
   'glm-4.6',
   'glm-4.5',
   'glm-4.5-air',
@@ -57,18 +58,32 @@ export const FormatConfigSchema = z.object({
 });
 
 /**
+ * LLM parameters schema
+ */
+export const LLMParametersSchema = z.object({
+  temperature: z.number().min(0).max(2).optional(),
+  top_p: z.number().min(0).max(1).optional(),
+  top_k: z.number().int().positive().optional(),
+  max_tokens: z.number().int().positive().optional(),
+  seed: z.number().int().optional(),
+  frequency_penalty: z.number().min(-2).max(2).optional(),
+  presence_penalty: z.number().min(-2).max(2).optional(),
+});
+
+/**
  * Zod schema for validating chat requests
  */
 export const ChatRequestSchema = z.object({
   messages: z.array(MessageSchema).max(50),
   model: z.enum(AVAILABLE_MODELS).optional().default(DEFAULT_MODEL),
   formatConfig: FormatConfigSchema.optional(),
+  parameters: LLMParametersSchema.optional(),
 });
 
 /**
  * Maximum total characters allowed in input
  */
-export const MAX_INPUT_CHARS = 10000;
+export const MAX_INPUT_CHARS = 10000000; // 10 миллионов символов
 
 /**
  * Validates that total message length doesn't exceed limit

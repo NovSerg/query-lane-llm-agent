@@ -1,4 +1,4 @@
-import { ProviderAdapter, StreamChunk, Message, FormatConfig } from '../../lib/types';
+import { ProviderAdapter, StreamChunk, Message, FormatConfig, LLMParameters } from '../../lib/types';
 
 /**
  * OpenRouter provider adapter
@@ -11,7 +11,7 @@ export class OpenRouterAdapter implements ProviderAdapter {
   /**
    * Creates a new OpenRouter adapter instance
    * @param {string} apiKey - OpenRouter API key
-   * @param {string} model - Model identifier (e.g., 'anthropic/claude-3.5-haiku')
+   * @param {string} model - Model identifier (e.g., 'anthropic/claude-haiku-4.5')
    */
   constructor(apiKey: string, model: string) {
     this.apiKey = apiKey;
@@ -33,16 +33,19 @@ export class OpenRouterAdapter implements ProviderAdapter {
    * @param {Message[]} params.messages - Chat messages
    * @param {AbortSignal} [params.signal] - Optional abort signal
    * @param {FormatConfig} [params.formatConfig] - Output format configuration
+   * @param {LLMParameters} [params.parameters] - LLM parameters
    * @yields {StreamChunk} Stream chunks
    */
   async *generateStream({
     messages,
     signal,
     formatConfig,
+    parameters,
   }: {
     messages: Message[];
     signal?: AbortSignal;
     formatConfig?: FormatConfig;
+    parameters?: LLMParameters;
   }): AsyncIterable<StreamChunk> {
     // Check for abort signal
     if (signal?.aborted) {
@@ -87,11 +90,34 @@ export class OpenRouterAdapter implements ProviderAdapter {
         }
       }
 
-      const requestBody = {
+      const requestBody: Record<string, unknown> = {
         model: this.model,
         messages: apiMessages,
         stream: true,
       };
+
+      // Add LLM parameters if provided
+      if (parameters) {
+        if (parameters.temperature !== undefined) {
+          requestBody.temperature = parameters.temperature;
+        }
+        if (parameters.top_p !== undefined) {
+          requestBody.top_p = parameters.top_p;
+        }
+        if (parameters.max_tokens !== undefined) {
+          requestBody.max_tokens = parameters.max_tokens;
+        }
+        if (parameters.frequency_penalty !== undefined) {
+          requestBody.frequency_penalty = parameters.frequency_penalty;
+        }
+        if (parameters.presence_penalty !== undefined) {
+          requestBody.presence_penalty = parameters.presence_penalty;
+        }
+        if (parameters.seed !== undefined) {
+          requestBody.seed = parameters.seed;
+        }
+        // top_k is less commonly supported by OpenRouter models
+      }
 
       const url = 'https://openrouter.ai/api/v1/chat/completions';
 

@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 import { ChevronDown, Check } from 'lucide-react';
 
 const MODELS = [
-  { id: 'anthropic/claude-3.5-haiku', name: 'Claude 3.5 Haiku', description: 'Fast, intelligent, affordable', provider: 'openrouter' },
+  { id: 'anthropic/claude-haiku-4.5', name: 'Claude Haiku 4.5', description: 'Fastest & most affordable', provider: 'openrouter' },
   { id: 'glm-4.6', name: 'GLM-4.6', description: 'Latest flagship model', provider: 'zai' },
   { id: 'glm-4.5', name: 'GLM-4.5', description: 'Balanced performance', provider: 'zai' },
   { id: 'glm-4.5-air', name: 'GLM-4.5-Air', description: 'Lightweight & fast', provider: 'zai' },
@@ -39,7 +39,7 @@ export function ModelSelector({
   const [isDark, setIsDark] = useState(true);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const selectedModelData = MODELS.find((m) => m.id === selectedModel) || MODELS[5];
+  const selectedModelData = MODELS.find((m) => m.id === selectedModel) || MODELS[6];
 
   // Check theme on mount and when it changes
   useEffect(() => {

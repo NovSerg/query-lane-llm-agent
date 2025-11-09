@@ -23,7 +23,6 @@ export function Composer({
   const handleSend = () => {
     const trimmed = message.trim();
     if (trimmed && !disabled) {
-      console.log('[User Request] Sending message:', trimmed);
       onSend(trimmed);
       setMessage('');
 

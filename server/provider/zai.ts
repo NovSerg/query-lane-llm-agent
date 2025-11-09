@@ -114,14 +114,6 @@ export class ZAIAdapter implements ProviderAdapter {
 
       const url = 'https://api.z.ai/api/coding/paas/v4/chat/completions';
 
-      console.log('[Z.AI Request]');
-      console.log('URL:', url);
-      console.log('Headers:', {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${this.apiKey.substring(0, 10)}...`,
-      });
-      console.log('Body:', JSON.stringify(requestBody, null, 2));
-
       const response = await fetch(url, {
         method: 'POST',
         headers: {
@@ -132,13 +124,8 @@ export class ZAIAdapter implements ProviderAdapter {
         signal,
       });
 
-      console.log('[Z.AI Response]');
-      console.log('Status:', response.status, response.statusText);
-      console.log('Headers:', Object.fromEntries(response.headers.entries()));
-
       if (!response.ok) {
         const errorText = await response.text();
-        console.log('Error body:', errorText);
         throw new Error(`API error: ${response.status} ${response.statusText} - ${errorText}`);
       }
 
@@ -203,7 +190,7 @@ export class ZAIAdapter implements ProviderAdapter {
                 }
               }
             } catch (error) {
-              console.error('Error parsing SSE data:', dataStr, error);
+              // Failed to parse SSE data
             }
           }
         }

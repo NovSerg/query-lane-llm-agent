@@ -52,7 +52,7 @@ export const responseHistory = {
 
       localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
     } catch (error) {
-      console.error('Failed to save response history:', error);
+      // Save failed
     }
   },
 
@@ -75,7 +75,7 @@ export const responseHistory = {
       const filtered = history.filter(item => item.id !== id);
       localStorage.setItem(HISTORY_KEY, JSON.stringify(filtered));
     } catch (error) {
-      console.error('Failed to delete history item:', error);
+      // Delete failed
     }
   },
 
@@ -88,7 +88,7 @@ export const responseHistory = {
     try {
       localStorage.removeItem(HISTORY_KEY);
     } catch (error) {
-      console.error('Failed to clear history:', error);
+      // Clear failed
     }
   },
 
@@ -244,7 +244,6 @@ export const responseHistory = {
       localStorage.setItem(HISTORY_KEY, JSON.stringify(unique));
       return true;
     } catch (error) {
-      console.error('Failed to import history:', error);
       return false;
     }
   },

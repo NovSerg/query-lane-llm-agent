@@ -47,6 +47,15 @@ export default function ChatPage() {
       setIsDarkMode(prefersDark);
     }
 
+    // Add missing default agents (for updates with new agents)
+    const addedCount = agentStorage.addMissingDefaults();
+
+    // If new agents were added, reload the page to show them
+    if (addedCount > 0) {
+      window.location.reload();
+      return;
+    }
+
     // Load active agent
     const agent = agentStorage.getActiveAgent();
     if (agent) {
@@ -129,12 +138,10 @@ export default function ChatPage() {
       await processNDJSONStream(response, {
         onMeta: () => {
           // Handle metadata if needed
-          console.log('[LLM Response] Meta received');
         },
         onToken: (chunk) => {
           if (chunk.content) {
             assistantMessage += chunk.content;
-            console.log('[LLM Response] Token:', chunk.content);
             setMessages((prev) => {
               const newMessages = [...prev];
               newMessages[newMessages.length - 1] = {
@@ -146,20 +153,14 @@ export default function ChatPage() {
           }
         },
         onDone: () => {
-          console.log('[LLM Response] Complete response received');
-          console.log('[LLM Response] Raw content:', assistantMessage);
-
           // Parse response if format config is set
           const formatConfig = activeAgent.formatConfig;
           if (formatConfig && formatConfig.format !== 'text') {
-            console.log('[LLM Response] Processing with format:', formatConfig.format);
             const parsed = processResponse(
               assistantMessage,
               formatConfig.format,
               formatConfig.validationMode || 'lenient'
             );
-
-            console.log('[LLM Response] Parsed result:', parsed);
 
             // Update message with parsed data
             setMessages((prev) => {
@@ -185,8 +186,6 @@ export default function ChatPage() {
                 templateName: activeAgent.name,
                 model: activeAgent.model,
               });
-
-              console.log('[LLM Response] Saved to history with agent:', activeAgent.name);
             }
           }
 
@@ -194,7 +193,6 @@ export default function ChatPage() {
           abortControllerRef.current = null;
         },
         onError: (chunk) => {
-          console.error('[LLM Response] Error:', chunk);
           setError(chunk.message || 'Unknown error occurred');
           setState('error');
           abortControllerRef.current = null;

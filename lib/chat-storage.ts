@@ -40,7 +40,6 @@ export function getAllChats(): Chat[] {
     // Сортируем по дате обновления (новые сверху)
     return chats.sort((a, b) => b.updatedAt - a.updatedAt);
   } catch (error) {
-    console.error('Ошибка при загрузке чатов:', error);
     return [];
   }
 }
@@ -62,7 +61,7 @@ function saveChats(chats: Chat[]): void {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(chats));
   } catch (error) {
-    console.error('Ошибка при сохранении чатов:', error);
+    // Save failed
   }
 }
 
@@ -211,7 +210,6 @@ export function importChat(jsonData: string): Chat | null {
 
     return chat;
   } catch (error) {
-    console.error('Ошибка при импорте чата:', error);
     return null;
   }
 }

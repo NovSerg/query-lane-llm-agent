@@ -148,7 +148,7 @@ export function validateResponse<T>(
 export function safeValidateResponse<T>(
   data: unknown,
   schema: ZodSchema<T>
-): z.SafeParseReturnType<unknown, T> {
+): ReturnType<typeof schema.safeParse> {
   return schema.safeParse(data);
 }
 

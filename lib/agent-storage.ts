@@ -1,4 +1,5 @@
 import { Agent } from './types';
+import { getReasoningPrompt } from './reasoning-modes';
 
 const STORAGE_KEY = 'querylane.agents.v1';
 const ACTIVE_AGENT_KEY = 'querylane.active-agent.v1';
@@ -65,6 +66,83 @@ function getDefaultAgents(): Agent[] {
       createdAt: Date.now(),
       updatedAt: Date.now(),
     },
+    // Reasoning modes agents
+    {
+      id: 'reasoning_direct',
+      name: '⚡ Прямой ответ',
+      description: 'Быстрый и лаконичный ответ без детального анализа',
+      model: 'glm-4.5-flash',
+      provider: 'zai',
+      systemPrompt: getReasoningPrompt('direct'),
+      parameters: {
+        temperature: 0.7,
+        max_tokens: 2000,
+      },
+      formatConfig: {
+        format: 'text',
+        systemPrompt: '',
+        validationMode: 'lenient',
+      },
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    },
+    {
+      id: 'reasoning_cot',
+      name: '🧩 Пошаговое рассуждение',
+      description: 'Детальный анализ с объяснением каждого шага (Chain-of-Thought)',
+      model: 'glm-4.5',
+      provider: 'zai',
+      systemPrompt: getReasoningPrompt('chain-of-thought'),
+      parameters: {
+        temperature: 0.5,
+        max_tokens: 4000,
+      },
+      formatConfig: {
+        format: 'text',
+        systemPrompt: '',
+        validationMode: 'lenient',
+      },
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    },
+    {
+      id: 'reasoning_meta',
+      name: '🎯 Мета-промптинг',
+      description: 'Создает оптимальный промпт для другого LLM',
+      model: 'glm-4.5',
+      provider: 'zai',
+      systemPrompt: getReasoningPrompt('meta-prompting'),
+      parameters: {
+        temperature: 0.6,
+        max_tokens: 5000,
+      },
+      formatConfig: {
+        format: 'text',
+        systemPrompt: '',
+        validationMode: 'lenient',
+      },
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    },
+    {
+      id: 'reasoning_panel',
+      name: '👥 Экспертная панель',
+      description: 'Несколько виртуальных экспертов обсуждают решение',
+      model: 'glm-4.5',
+      provider: 'zai',
+      systemPrompt: getReasoningPrompt('expert-panel'),
+      parameters: {
+        temperature: 0.7,
+        max_tokens: 5000,
+      },
+      formatConfig: {
+        format: 'text',
+        systemPrompt: '',
+        validationMode: 'lenient',
+      },
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    },
   ];
 }
 
@@ -84,7 +162,7 @@ function initializeStorage(): void {
       localStorage.setItem(ACTIVE_AGENT_KEY, defaults[0].id);
     }
   } catch (error) {
-    console.error('Failed to initialize agent storage:', error);
+    // Initialization failed
   }
 }
 
@@ -171,7 +249,6 @@ export const agentStorage = {
 
     // Prevent deleting all agents
     if (filtered.length === 0) {
-      console.warn('Cannot delete last agent');
       return false;
     }
 
@@ -194,7 +271,7 @@ export const agentStorage = {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(agents));
     } catch (error) {
-      console.error('Failed to save agents:', error);
+      // Save failed
     }
   },
 
@@ -245,7 +322,6 @@ export const agentStorage = {
       localStorage.setItem(ACTIVE_AGENT_KEY, id);
       return true;
     } catch (error) {
-      console.error('Failed to set active agent:', error);
       return false;
     }
   },
@@ -302,7 +378,6 @@ export const agentStorage = {
       this.saveAll(unique);
       return true;
     } catch (error) {
-      console.error('Failed to import agents:', error);
       return false;
     }
   },
@@ -342,5 +417,34 @@ export const agentStorage = {
     const defaults = getDefaultAgents();
     this.saveAll(defaults);
     this.setActiveAgent(defaults[0].id);
+  },
+
+  /**
+   * Add missing default agents (useful for updates)
+   * Only adds agents that don't exist yet
+   */
+  addMissingDefaults(): number {
+    if (typeof window === 'undefined') return 0;
+
+    const existing = this.getAll();
+    const existingIds = new Set(existing.map(a => a.id));
+    const defaults = getDefaultAgents();
+
+    const missing = defaults.filter(agent => !existingIds.has(agent.id));
+
+    if (missing.length > 0) {
+      const updated = [...existing, ...missing];
+      this.saveAll(updated);
+    }
+
+    return missing.length;
+  },
+
+  /**
+   * Check if reasoning mode agents are available
+   */
+  hasReasoningModes(): boolean {
+    const agents = this.getAll();
+    return agents.some(a => a.id.startsWith('reasoning_'));
   },
 };

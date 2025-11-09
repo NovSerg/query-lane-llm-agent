@@ -38,7 +38,7 @@ function cleanupOldDefaults(): void {
       localStorage.removeItem(PINNED_KEY);
     }
   } catch (error) {
-    console.error('Failed to cleanup old formats:', error);
+    // Cleanup failed
   }
 }
 
@@ -134,7 +134,7 @@ export const customFormats = {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(formats));
     } catch (error) {
-      console.error('Failed to save custom formats:', error);
+      // Save failed
     }
   },
 
@@ -167,7 +167,7 @@ export const customFormats = {
         localStorage.setItem(PINNED_KEY, id);
       }
     } catch (error) {
-      console.error('Failed to set pinned format:', error);
+      // Failed to set pinned
     }
   },
 
@@ -229,7 +229,6 @@ export const customFormats = {
       this.saveAll(unique);
       return true;
     } catch (error) {
-      console.error('Failed to import formats:', error);
       return false;
     }
   },

@@ -80,7 +80,6 @@ export function parseXML(xmlString: string): unknown | null {
     const result = xmlToJson(xmlDoc.documentElement);
     return result;
   } catch (error) {
-    console.error('XML parsing error:', error);
     return null;
   }
 }

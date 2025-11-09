@@ -8,7 +8,13 @@ import { OpenRouterAdapter } from './openrouter';
  * @returns {string} Provider name ('openrouter' or 'zai')
  */
 function getProviderFromModel(modelId: string): 'openrouter' | 'zai' {
-  if (modelId.includes('claude') || modelId.includes('anthropic') || modelId.includes('/')) {
+  if (
+    modelId.includes('claude') ||
+    modelId.includes('anthropic') ||
+    modelId.includes('openai') ||
+    modelId.includes('gpt') ||
+    modelId.includes('/')
+  ) {
     return 'openrouter';
   }
   return 'zai';

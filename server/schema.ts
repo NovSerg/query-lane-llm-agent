@@ -21,7 +21,15 @@ export const MessageSchema = z.object({
  * Available AI models
  */
 export const AVAILABLE_MODELS = [
+  // OpenAI models (via OpenRouter)
+  'openai/gpt-4.1',
+  'openai/gpt-4o',
+  'openai/gpt-4o-mini',
+  // Anthropic models (via OpenRouter)
   'anthropic/claude-haiku-4.5',
+  'anthropic/claude-sonnet-4',
+  'anthropic/claude-opus-4',
+  // Z.AI GLM models
   'glm-4.6',
   'glm-4.5',
   'glm-4.5-air',

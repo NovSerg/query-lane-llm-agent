@@ -59,10 +59,10 @@ export async function processNDJSONStream(
                 callbacks.onError?.(chunk as StreamChunk & { type: 'error' });
                 return;
               default:
-                console.warn('Unknown chunk type:', chunk);
+                // Unknown chunk type
             }
           } catch (error) {
-            console.error('Failed to parse NDJSON line:', line, error);
+            // Failed to parse line
           }
         }
       }
@@ -78,7 +78,7 @@ export async function processNDJSONStream(
           callbacks.onError?.(chunk as StreamChunk & { type: 'error' });
         }
       } catch (error) {
-        console.error('Failed to parse final NDJSON buffer:', buffer, error);
+        // Failed to parse final buffer
       }
     }
   } finally {

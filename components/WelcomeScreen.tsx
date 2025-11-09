@@ -22,7 +22,6 @@ export function WelcomeScreen({
     e.preventDefault();
     if (input.trim()) {
       const message = input.trim();
-      console.log('[User Request] From welcome screen:', message);
       onSend(message);
       setInput('');
     }

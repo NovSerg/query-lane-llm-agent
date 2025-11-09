@@ -25,7 +25,12 @@ import {
   IconButton,
   Chip,
 } from '@mui/material';
-import { Close as CloseIcon, Settings as SettingsIcon } from '@mui/icons-material';
+import {
+  Close as CloseIcon,
+  Settings as SettingsIcon,
+  Fullscreen as FullscreenIcon,
+  FullscreenExit as FullscreenExitIcon,
+} from '@mui/icons-material';
 import { Agent, OutputFormat, ValidationMode } from '@/lib/types';
 import { agentStorage } from '@/lib/agent-storage';
 import { AVAILABLE_MODELS } from '@/server/schema';
@@ -39,6 +44,7 @@ interface AgentEditorProps {
 
 function AgentEditor({ open, onClose, agent, onSave }: AgentEditorProps) {
   const [activeTab, setActiveTab] = useState(0);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const [formData, setFormData] = useState<Partial<Agent>>({
     name: '',
     description: '',
@@ -100,7 +106,13 @@ function AgentEditor({ open, onClose, agent, onSave }: AgentEditorProps) {
   };
 
   const getProviderFromModel = (modelId: string): 'zai' | 'openrouter' => {
-    if (modelId.includes('claude') || modelId.includes('anthropic') || modelId.includes('/')) {
+    if (
+      modelId.includes('claude') ||
+      modelId.includes('anthropic') ||
+      modelId.includes('openai') ||
+      modelId.includes('gpt') ||
+      modelId.includes('/')
+    ) {
       return 'openrouter';
     }
     return 'zai';
@@ -112,6 +124,7 @@ function AgentEditor({ open, onClose, agent, onSave }: AgentEditorProps) {
       onClose={onClose}
       maxWidth="md"
       fullWidth
+      fullScreen={isFullscreen}
       PaperProps={{
         sx: {
           minHeight: '600px',
@@ -121,9 +134,18 @@ function AgentEditor({ open, onClose, agent, onSave }: AgentEditorProps) {
     >
       <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         {agent ? 'Редактировать агента' : 'Создать агента'}
-        <IconButton onClick={onClose} size="small">
-          <CloseIcon />
-        </IconButton>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <IconButton
+            onClick={() => setIsFullscreen(!isFullscreen)}
+            size="small"
+            title={isFullscreen ? 'Выход из полноэкранного режима' : 'Полноэкранный режим'}
+          >
+            {isFullscreen ? <FullscreenExitIcon /> : <FullscreenIcon />}
+          </IconButton>
+          <IconButton onClick={onClose} size="small">
+            <CloseIcon />
+          </IconButton>
+        </Box>
       </DialogTitle>
 
       <DialogContent dividers>
@@ -149,7 +171,7 @@ function AgentEditor({ open, onClose, agent, onSave }: AgentEditorProps) {
               value={formData.description || ''}
               onChange={e => setFormData({ ...formData, description: e.target.value })}
               multiline
-              rows={2}
+              rows={isFullscreen ? 3 : 2}
               fullWidth
             />
 
@@ -180,7 +202,7 @@ function AgentEditor({ open, onClose, agent, onSave }: AgentEditorProps) {
               value={formData.systemPrompt || ''}
               onChange={e => setFormData({ ...formData, systemPrompt: e.target.value })}
               multiline
-              rows={6}
+              rows={isFullscreen ? 25 : 6}
               required
               fullWidth
               helperText="Основная инструкция для агента, определяющая его поведение"
@@ -381,7 +403,7 @@ function AgentEditor({ open, onClose, agent, onSave }: AgentEditorProps) {
                 })
               }
               multiline
-              rows={4}
+              rows={isFullscreen ? 15 : 4}
               fullWidth
               helperText="Инструкции по форматированию ответа (добавляется к системному промпту)"
             />
@@ -399,7 +421,7 @@ function AgentEditor({ open, onClose, agent, onSave }: AgentEditorProps) {
                 })
               }
               multiline
-              rows={4}
+              rows={isFullscreen ? 15 : 4}
               fullWidth
               helperText="Пример ожидаемого формата ответа (опционально)"
             />

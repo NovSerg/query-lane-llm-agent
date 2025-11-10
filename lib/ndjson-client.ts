@@ -102,6 +102,15 @@ export async function sendChatRequest(
   formatConfig?: import('./types').FormatConfig,
   parameters?: import('./types').LLMParameters
 ): Promise<Response> {
+  // Debug logging (client-side)
+  console.log('[CLIENT] Отправка запроса:', {
+    model,
+    temperature: parameters?.temperature,
+    top_p: parameters?.top_p,
+    seed: parameters?.seed,
+    max_tokens: parameters?.max_tokens,
+  });
+
   return fetch('/api/chat', {
     method: 'POST',
     headers: {

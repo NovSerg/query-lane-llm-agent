@@ -17,7 +17,9 @@
       "Bash(wc:*)",
       "Bash(git init:*)",
       "Bash(npm run build:*)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(npx tsc:*)",
+      "Bash(tasklist:*)"
     ],
     "deny": [],
     "ask": []

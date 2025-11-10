@@ -5,17 +5,18 @@ const STORAGE_KEY = 'querylane.agents.v1';
 const ACTIVE_AGENT_KEY = 'querylane.active-agent.v1';
 
 /**
- * Default agents created on first use
+ * Default agents - experimental and reasoning modes
  */
 function getDefaultAgents(): Agent[] {
   return [
+    // Experimental agent for testing temperature settings
     {
-      id: 'default_general',
-      name: 'Общий помощник',
-      description: 'Универсальный ассистент для разных задач',
+      id: 'experimental_temp',
+      name: '🔬 Лаборатория температур',
+      description: 'Агент для экспериментов с temperature (БЕЗ seed для разнообразия)',
       model: 'glm-4.5-flash',
       provider: 'zai',
-      systemPrompt: 'Ты полезный AI-ассистент. Отвечай кратко и по существу.',
+      systemPrompt: 'Ты полезный AI-ассистент.',
       parameters: {
         temperature: 0.7,
         max_tokens: 2000,
@@ -23,44 +24,6 @@ function getDefaultAgents(): Agent[] {
       formatConfig: {
         format: 'text',
         systemPrompt: '',
-        validationMode: 'lenient',
-      },
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-    },
-    {
-      id: 'default_coder',
-      name: 'Программист',
-      description: 'Специализация на написании и анализе кода',
-      model: 'glm-4.5',
-      provider: 'zai',
-      systemPrompt: 'Ты опытный программист. Пиши чистый, эффективный код с комментариями. Используй лучшие практики.',
-      parameters: {
-        temperature: 0.3,
-        max_tokens: 4000,
-      },
-      formatConfig: {
-        format: 'text',
-        systemPrompt: '',
-        validationMode: 'lenient',
-      },
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-    },
-    {
-      id: 'default_analyst',
-      name: 'Аналитик данных',
-      description: 'Анализ данных и структурированные ответы в JSON',
-      model: 'glm-4.5',
-      provider: 'zai',
-      systemPrompt: 'Ты аналитик данных. Анализируй информацию глубоко и предоставляй структурированные ответы.',
-      parameters: {
-        temperature: 0.5,
-        max_tokens: 3000,
-      },
-      formatConfig: {
-        format: 'json',
-        systemPrompt: 'Всегда отвечай в формате JSON. Структурируй данные логично.',
         validationMode: 'lenient',
       },
       createdAt: Date.now(),

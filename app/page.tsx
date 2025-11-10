@@ -104,29 +104,39 @@ export default function ChatPage() {
       const controller = new AbortController();
       abortControllerRef.current = controller;
 
+      // ВАЖНО: Перечитываем агента из storage перед запросом
+      // чтобы гарантировать актуальные параметры
+      const currentAgent = agentStorage.getById(activeAgent.id) || activeAgent;
+
+      console.log('[PAGE] Отправка с агентом:', {
+        name: currentAgent.name,
+        temperature: currentAgent.parameters?.temperature,
+        model: currentAgent.model,
+      });
+
       // Prepare messages with agent's system prompt
       let messagesToSend = [...updatedMessages];
 
       // Add agent's system prompt as first message if it exists and not already added
-      if (activeAgent.systemPrompt && activeAgent.systemPrompt.trim()) {
+      if (currentAgent.systemPrompt && currentAgent.systemPrompt.trim()) {
         const hasSystemMessage = messagesToSend.some(msg => msg.role === 'system');
 
         if (!hasSystemMessage) {
           // Add system prompt at the beginning
           messagesToSend = [
-            { role: 'system', content: activeAgent.systemPrompt },
+            { role: 'system', content: currentAgent.systemPrompt },
             ...messagesToSend
           ];
         }
       }
 
-      // Use agent's configuration
+      // Use agent's configuration (from freshly loaded agent)
       const response = await sendChatRequest(
         messagesToSend,
         controller.signal,
-        activeAgent.model,
-        activeAgent.formatConfig,
-        activeAgent.parameters
+        currentAgent.model,
+        currentAgent.formatConfig,
+        currentAgent.parameters
       );
       setState('streaming');
 

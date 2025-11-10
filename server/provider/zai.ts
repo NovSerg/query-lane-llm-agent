@@ -108,9 +108,20 @@ export class ZAIAdapter implements ProviderAdapter {
         if (parameters.max_tokens !== undefined) {
           requestBody.max_tokens = parameters.max_tokens;
         }
+        if (parameters.seed !== undefined) {
+          requestBody.seed = parameters.seed;
+        }
         // Note: Z.AI might not support all parameters
-        // frequency_penalty, presence_penalty, seed, top_k might need API docs check
+        // frequency_penalty, presence_penalty, top_k might need API docs check
       }
+
+      // Debug logging (remove in production)
+      console.log('[Z.AI Request]', {
+        model: this.model,
+        temperature: requestBody.temperature,
+        seed: requestBody.seed,
+        top_p: requestBody.top_p,
+      });
 
       const url = 'https://api.z.ai/api/coding/paas/v4/chat/completions';
 

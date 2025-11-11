@@ -15,6 +15,12 @@ export interface ResponseMetadata {
   parsed?: ParsedResponse;
   validationError?: string;
   timestamp?: number;
+  // Metrics
+  model?: string;
+  responseTime?: number; // milliseconds
+  inputTokens?: number;
+  outputTokens?: number;
+  cost?: number; // USD
 }
 
 export interface ParsedResponse {
@@ -104,6 +110,13 @@ export interface StreamChunk {
   message?: string;
   code?: string;
   startedAt?: number;
+  // Usage metrics (in done chunk)
+  usage?: {
+    inputTokens: number;
+    outputTokens: number;
+    totalTokens: number;
+    cost?: number; // Actual cost in USD from provider (OpenRouter)
+  };
 }
 
 export interface ProviderAdapter {

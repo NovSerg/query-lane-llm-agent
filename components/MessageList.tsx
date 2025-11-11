@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { Card } from '@/components/ui/card';
 import { MarkdownMessage } from './MarkdownMessage';
 import { StructuredResponseViewer } from './StructuredResponseViewer';
+import { MetricsDisplay } from './MetricsDisplay';
 import { User, Bot } from 'lucide-react';
 import Fab from '@mui/material/Fab';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
@@ -117,6 +118,11 @@ export function MessageList({ messages, className }: MessageListProps) {
                       parsedResponse={message.metadata.parsed}
                     />
                   )}
+
+                {/* Metrics Display */}
+                {message.role === 'assistant' && message.metadata && (
+                  <MetricsDisplay metadata={message.metadata} />
+                )}
               </div>
             </div>
           ))}

@@ -28,7 +28,22 @@ export const AVAILABLE_MODELS = [
   // Anthropic models (via OpenRouter)
   'anthropic/claude-haiku-4.5',
   'anthropic/claude-sonnet-4',
+  'anthropic/claude-sonnet-4.5',
   'anthropic/claude-opus-4',
+  // Google models (via OpenRouter)
+  'google/gemini-flash-1.5',
+  'google/gemini-pro-1.5',
+  'google/gemma-2-9b-it',
+  // Qwen models (via OpenRouter)
+  'qwen/qwen-4b-chat',
+  'qwen/qwen-2.5-7b-instruct',
+  // Meta models (via OpenRouter)
+  'meta-llama/llama-3.2-3b-instruct:free',
+  'meta-llama/llama-3.1-70b-instruct',
+  'meta-llama/llama-3.3-70b-instruct',
+  // Mistral models (via OpenRouter)
+  'mistralai/mistral-7b-instruct:free',
+  'mistralai/mistral-large',
   // Z.AI GLM models
   'glm-4.6',
   'glm-4.5',

@@ -94,6 +94,7 @@ export class OpenRouterAdapter implements ProviderAdapter {
         model: this.model,
         messages: apiMessages,
         stream: true,
+        usage: { include: true }, // Enable detailed usage accounting with costs
       };
 
       // Add LLM parameters if provided
@@ -146,6 +147,8 @@ export class OpenRouterAdapter implements ProviderAdapter {
       const decoder = new TextDecoder();
 
       let buffer = '';
+      let savedUsage: Record<string, unknown> | undefined;
+      let finishReasonSeen = false;
 
       while (true) {
         const { done, value } = await reader.read();
@@ -172,14 +175,30 @@ export class OpenRouterAdapter implements ProviderAdapter {
 
             // Check for stream end
             if (dataStr === '[DONE]') {
+              const usage = savedUsage
+                ? {
+                    inputTokens: savedUsage.native_tokens_prompt || savedUsage.prompt_tokens || 0,
+                    outputTokens: savedUsage.native_tokens_completion || savedUsage.completion_tokens || 0,
+                    totalTokens: (savedUsage.native_tokens_prompt || savedUsage.prompt_tokens || 0) +
+                                 (savedUsage.native_tokens_completion || savedUsage.completion_tokens || 0),
+                    cost: savedUsage.cost, // Cost in USD (1 credit = $1)
+                  }
+                : undefined;
+
               yield {
                 type: 'done',
+                usage,
               };
               return;
             }
 
             try {
               const data = JSON.parse(dataStr);
+
+              // Save usage data from any chunk that has it
+              if (data.usage) {
+                savedUsage = data.usage;
+              }
 
               if (data.choices && data.choices.length > 0) {
                 const delta = data.choices[0].delta;
@@ -192,14 +211,13 @@ export class OpenRouterAdapter implements ProviderAdapter {
                 }
 
                 if (data.choices[0].finish_reason) {
-                  yield {
-                    type: 'done',
-                  };
-                  return;
+                  finishReasonSeen = true;
+                  // Don't return yet - wait for usage data or [DONE]
                 }
               }
             } catch (error) {
               // Failed to parse SSE data
+              console.error('[OpenRouter] Failed to parse SSE:', error);
             }
           }
         }

@@ -6,14 +6,32 @@ import { cn } from '@/lib/utils';
 import { ChevronDown, Check } from 'lucide-react';
 
 const MODELS = [
-  { id: 'anthropic/claude-haiku-4.5', name: 'Claude Haiku 4.5', description: 'Fastest & most affordable', provider: 'openrouter' },
-  { id: 'glm-4.6', name: 'GLM-4.6', description: 'Latest flagship model', provider: 'zai' },
-  { id: 'glm-4.5', name: 'GLM-4.5', description: 'Balanced performance', provider: 'zai' },
-  { id: 'glm-4.5-air', name: 'GLM-4.5-Air', description: 'Lightweight & fast', provider: 'zai' },
-  { id: 'glm-4.5-x', name: 'GLM-4.5-X', description: 'Extended capabilities', provider: 'zai' },
+  // Advanced models
+  { id: 'anthropic/claude-haiku-4.5', name: 'Claude Haiku 4.5', description: 'Fast & affordable', provider: 'openrouter' },
+  { id: 'deepseek/deepseek-r1', name: 'DeepSeek R1', description: 'Reasoning (671B)', provider: 'openrouter' },
+  { id: 'openai/gpt-oss-120b', name: 'GPT-OSS 120B', description: 'OpenAI MoE (117B)', provider: 'openrouter' },
+
+  // Z.AI GLM models
+  { id: 'glm-4.6', name: 'GLM-4.6', description: 'Latest flagship', provider: 'zai' },
+  { id: 'glm-4.5', name: 'GLM-4.5', description: 'Balanced', provider: 'zai' },
+  { id: 'glm-4.5-air', name: 'GLM-4.5-Air', description: 'Lightweight', provider: 'zai' },
+  { id: 'glm-4.5-x', name: 'GLM-4.5-X', description: 'Extended', provider: 'zai' },
   { id: 'glm-4.5-airx', name: 'GLM-4.5-AirX', description: 'Air extended', provider: 'zai' },
-  { id: 'glm-4.5-flash', name: 'GLM-4.5-Flash', description: 'Ultra-fast responses', provider: 'zai' },
+  { id: 'glm-4.5-flash', name: 'GLM-4.5-Flash', description: 'Ultra-fast', provider: 'zai' },
   { id: 'glm-4-32b-0414-128k', name: 'GLM-4-32B', description: '128K context', provider: 'zai' },
+
+  // Google models
+  { id: 'google/gemini-flash-1.5', name: 'Gemini Flash 1.5', description: 'Fast & affordable', provider: 'openrouter' },
+  { id: 'google/gemini-pro-1.5', name: 'Gemini Pro 1.5', description: 'Advanced', provider: 'openrouter' },
+  { id: 'google/gemma-2-9b-it', name: 'Gemma 2 9B', description: 'Compact (9B)', provider: 'openrouter' },
+
+  // Qwen models
+  { id: 'qwen/qwen-4b-chat', name: 'Qwen 1.5 4B', description: 'Compact (4B)', provider: 'openrouter' },
+  { id: 'qwen/qwen-2.5-7b-instruct', name: 'Qwen 2.5 7B', description: 'Balanced (7B)', provider: 'openrouter' },
+
+  // Small models for comparison
+  { id: 'meta-llama/llama-3.2-3b-instruct', name: 'Llama 3.2 3B', description: 'Meta tiny (3B)', provider: 'openrouter' },
+  { id: 'minimax/minimax-m2', name: 'MiniMax M2', description: 'Coding (10B)', provider: 'openrouter' },
 ] as const;
 
 /**
@@ -39,7 +57,7 @@ export function ModelSelector({
   const [isDark, setIsDark] = useState(true);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const selectedModelData = MODELS.find((m) => m.id === selectedModel) || MODELS[6];
+  const selectedModelData = MODELS.find((m) => m.id === selectedModel) || MODELS[0];
 
   // Check theme on mount and when it changes
   useEffect(() => {

@@ -144,6 +144,7 @@ export default function ChatPage() {
       setMessages((prev) => [...prev, { role: 'assistant', content: '' }]);
 
       let assistantMessage = '';
+      const startTime = Date.now();
 
       await processNDJSONStream(response, {
         onMeta: () => {
@@ -162,9 +163,26 @@ export default function ChatPage() {
             });
           }
         },
-        onDone: () => {
+        onDone: (chunk) => {
+          const responseTime = Date.now() - startTime;
+          const usage = chunk.usage;
+
           // Parse response if format config is set
           const formatConfig = activeAgent.formatConfig;
+
+          // Use cost from provider (OpenRouter provides actual cost)
+          // For Z.AI, set cost to 0 (subscription-based)
+          let cost: number | undefined;
+          if (usage) {
+            if (usage.cost !== undefined) {
+              // OpenRouter provides actual cost
+              cost = usage.cost;
+            } else if (currentAgent.provider === 'zai') {
+              // Z.AI - subscription, no per-request cost
+              cost = 0;
+            }
+          }
+
           if (formatConfig && formatConfig.format !== 'text') {
             const parsed = processResponse(
               assistantMessage,
@@ -172,7 +190,7 @@ export default function ChatPage() {
               formatConfig.validationMode || 'lenient'
             );
 
-            // Update message with parsed data
+            // Update message with parsed data and metrics
             setMessages((prev) => {
               const newMessages = [...prev];
               newMessages[newMessages.length - 1] = {
@@ -182,6 +200,11 @@ export default function ChatPage() {
                   format: formatConfig.format,
                   parsed,
                   timestamp: Date.now(),
+                  model: currentAgent.model,
+                  responseTime,
+                  inputTokens: usage?.inputTokens,
+                  outputTokens: usage?.outputTokens,
+                  cost,
                 },
               };
               return newMessages;
@@ -197,6 +220,24 @@ export default function ChatPage() {
                 model: activeAgent.model,
               });
             }
+          } else {
+            // Update message with metrics even for text format
+            setMessages((prev) => {
+              const newMessages = [...prev];
+              newMessages[newMessages.length - 1] = {
+                role: 'assistant',
+                content: assistantMessage,
+                metadata: {
+                  timestamp: Date.now(),
+                  model: currentAgent.model,
+                  responseTime,
+                  inputTokens: usage?.inputTokens,
+                  outputTokens: usage?.outputTokens,
+                  cost,
+                },
+              };
+              return newMessages;
+            });
           }
 
           setState('idle');

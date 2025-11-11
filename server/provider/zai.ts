@@ -194,8 +194,18 @@ export class ZAIAdapter implements ProviderAdapter {
                 }
 
                 if (data.choices[0].finish_reason) {
+                  // Include usage data if available
+                  const usage = data.usage
+                    ? {
+                        inputTokens: data.usage.prompt_tokens || 0,
+                        outputTokens: data.usage.completion_tokens || 0,
+                        totalTokens: data.usage.total_tokens || 0,
+                      }
+                    : undefined;
+
                   yield {
                     type: 'done',
+                    usage,
                   };
                   return;
                 }

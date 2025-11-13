@@ -77,6 +77,20 @@ export interface LLMParameters {
 }
 
 /**
+ * Compaction settings for dialog context management
+ */
+export interface CompactionSettings {
+  /** Enable automatic compaction */
+  enabled?: boolean;
+  /** Threshold percentage (0-100) for triggering compaction */
+  threshold?: number;
+  /** Number of first messages to keep */
+  keepFirstMessages?: number;
+  /** Number of last messages to keep */
+  keepLastMessages?: number;
+}
+
+/**
  * Agent configuration - complete settings for an AI assistant
  */
 export interface Agent {
@@ -96,6 +110,9 @@ export interface Agent {
 
   // Output format settings
   formatConfig: FormatConfig;
+
+  // Context compaction settings
+  compactionSettings?: CompactionSettings;
 
   // Metadata
   isPinned?: boolean;

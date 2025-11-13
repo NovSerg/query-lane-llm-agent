@@ -177,11 +177,11 @@ export class OpenRouterAdapter implements ProviderAdapter {
             if (dataStr === '[DONE]') {
               const usage = savedUsage
                 ? {
-                    inputTokens: savedUsage.native_tokens_prompt || savedUsage.prompt_tokens || 0,
-                    outputTokens: savedUsage.native_tokens_completion || savedUsage.completion_tokens || 0,
-                    totalTokens: (savedUsage.native_tokens_prompt || savedUsage.prompt_tokens || 0) +
-                                 (savedUsage.native_tokens_completion || savedUsage.completion_tokens || 0),
-                    cost: savedUsage.cost, // Cost in USD (1 credit = $1)
+                    inputTokens: (savedUsage.native_tokens_prompt as number) || (savedUsage.prompt_tokens as number) || 0,
+                    outputTokens: (savedUsage.native_tokens_completion as number) || (savedUsage.completion_tokens as number) || 0,
+                    totalTokens: ((savedUsage.native_tokens_prompt as number) || (savedUsage.prompt_tokens as number) || 0) +
+                                 ((savedUsage.native_tokens_completion as number) || (savedUsage.completion_tokens as number) || 0),
+                    cost: savedUsage.cost as number | undefined, // Cost in USD (1 credit = $1)
                   }
                 : undefined;
 

@@ -13,6 +13,8 @@ import { WelcomeScreen } from '@/components/WelcomeScreen';
 import { AgentManager } from '@/components/AgentManager';
 import { ChatHistory } from '@/components/ChatHistory';
 import { ThemeProvider } from '@/components/ThemeProvider';
+import { TokenCounter } from '@/components/TokenCounter';
+import { CompactButton } from '@/components/CompactButton';
 import {
   getCurrentOrCreateChat,
   getChatById,
@@ -94,11 +96,22 @@ export default function ChatPage() {
   const handleSend = async (userMessage: string) => {
     if (state === 'streaming' || !activeAgent) return;
 
+    // Clear previous errors
+    setError(null);
+
     const newMessage: Message = { role: 'user', content: userMessage };
     const updatedMessages = [...messages, newMessage];
+
+    // Check context limit before sending
+    const { shouldCompact: needsCompaction } = await import('@/lib/token-counter');
+    if (needsCompaction(updatedMessages, activeAgent.systemPrompt, activeAgent.model, 90)) {
+      setError('⚠️ Контекст почти заполнен (>90%). Сожмите диалог перед отправкой.');
+      setState('error');
+      return;
+    }
+
     setMessages(updatedMessages);
     setState('connecting');
-    setError(null);
 
     try {
       const controller = new AbortController();
@@ -323,6 +336,69 @@ export default function ChatPage() {
     setIsDarkMode(!isDarkMode);
   };
 
+  const handleCompact = async () => {
+    if (!activeAgent || !currentChatId) return;
+
+    try {
+      // Import compaction utilities
+      const { applyCompactionSummary } = await import(
+        '@/lib/message-compactor'
+      );
+
+      // Check if we have any messages to compact
+      if (messages.length === 0) {
+        console.log('Nothing to compact - no messages');
+        return;
+      }
+
+      console.log(`Compacting ${messages.length} messages into a summary...`);
+
+      // Call API to get summary of ALL messages
+      const response = await fetch('/api/compact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: messages,
+          model: activeAgent.model,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        const errorMsg = errorData.message
+          ? `${errorData.error}: ${errorData.message}`
+          : errorData.error || 'Compaction failed';
+        throw new Error(errorMsg);
+      }
+
+      const data = await response.json();
+      console.log('Summary received:', data.summary.substring(0, 100) + '...');
+
+      // Apply compaction - replaces all messages with summary
+      const result = applyCompactionSummary(
+        messages,
+        data.summary,
+        activeAgent.compactionSettings
+      );
+
+      // Update messages in state and storage
+      setMessages(result.messages);
+      updateChat(currentChatId, { messages: result.messages });
+      setError(null); // Clear any previous errors
+
+      console.log(
+        `Compaction complete: ${messages.length} messages → ${result.messages.length} message (summary)`
+      );
+    } catch (error) {
+      console.error('Compaction error:', error);
+      setError(
+        error instanceof Error
+          ? `Не удалось сжать диалог: ${error.message}`
+          : 'Не удалось сжать диалог'
+      );
+    }
+  };
+
   const hasMessages = messages.length > 0;
 
   // Prevent hydration mismatch by not rendering until mounted
@@ -371,10 +447,12 @@ export default function ChatPage() {
           {/* Messages */}
           <MessageList messages={messages} />
 
-          {/* State Message */}
-          {state !== 'idle' && (
-            <div className="px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 text-center text-xs sm:text-sm text-muted-foreground">
-              {getStateMessage()}
+          {/* State Message or Error */}
+          {(state !== 'idle' || error) && (
+            <div className={`px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 text-center text-xs sm:text-sm ${
+              error ? 'text-red-500' : 'text-muted-foreground'
+            }`}>
+              {error || getStateMessage()}
             </div>
           )}
 
@@ -389,6 +467,28 @@ export default function ChatPage() {
             }
             disabled={state === 'connecting'}
           />
+
+          {/* Context Info and Compaction - aligned with composer */}
+          {activeAgent && (
+            <div className="px-2 sm:px-3 md:px-4 pb-2 pt-1">
+              <div className="max-w-3xl sm:max-w-4xl mx-auto flex items-center justify-between gap-3 sm:gap-4">
+                <TokenCounter
+                  messages={messages}
+                  systemPrompt={activeAgent.systemPrompt}
+                  model={activeAgent.model}
+                  className="flex-1 min-w-0"
+                />
+                <CompactButton
+                  messages={messages}
+                  systemPrompt={activeAgent.systemPrompt}
+                  model={activeAgent.model}
+                  onCompact={handleCompact}
+                  config={activeAgent.compactionSettings}
+                  disabled={state !== 'idle'}
+                />
+              </div>
+            </div>
+          )}
 
           {/* Composer */}
           <Composer

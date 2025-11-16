@@ -49,6 +49,7 @@ next-env.d.ts
 /test-results/
 /playwright/.cache/
 
-# Chat history (local storage)
-/data/chats/
+# Local storage data (chats, agents, settings)
+/data/
 *.chat.json
+*.backup.json

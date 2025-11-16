@@ -41,8 +41,9 @@ export function ChatHistory({ currentChatId, onSelectChat, onNewChat }: ChatHist
   const [renameDialogOpen, setRenameDialogOpen] = useState(false);
   const [newTitle, setNewTitle] = useState('');
 
-  const loadChats = () => {
-    setChats(getAllChats());
+  const loadChats = async () => {
+    const allChats = await getAllChats();
+    setChats(allChats);
   };
 
   useEffect(() => {
@@ -69,20 +70,20 @@ export function ChatHistory({ currentChatId, onSelectChat, onNewChat }: ChatHist
     handleCloseMenu();
   };
 
-  const handleRename = () => {
+  const handleRename = async () => {
     if (selectedChatForMenu && newTitle.trim()) {
-      renameChat(selectedChatForMenu, newTitle.trim());
-      loadChats();
+      await renameChat(selectedChatForMenu, newTitle.trim());
+      await loadChats();
       setRenameDialogOpen(false);
       setNewTitle('');
     }
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (selectedChatForMenu) {
       if (confirm('Вы уверены, что хотите удалить этот чат?')) {
-        deleteChat(selectedChatForMenu);
-        loadChats();
+        await deleteChat(selectedChatForMenu);
+        await loadChats();
 
         // Если удалили текущий чат, создаём новый
         if (selectedChatForMenu === currentChatId) {

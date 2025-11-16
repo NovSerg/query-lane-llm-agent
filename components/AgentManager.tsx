@@ -85,7 +85,7 @@ function AgentEditor({ open, onClose, agent, onSave }: AgentEditorProps) {
     }
   }, [agent, open]);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!formData.name || !formData.systemPrompt) {
       alert('Заполните обязательные поля: имя и системный промпт');
       return;
@@ -93,12 +93,14 @@ function AgentEditor({ open, onClose, agent, onSave }: AgentEditorProps) {
 
     if (agent) {
       // Update existing
-      agentStorage.update(agent.id, formData);
-      const updated = agentStorage.getById(agent.id)!;
-      onSave(updated);
+      await agentStorage.update(agent.id, formData);
+      const updated = await agentStorage.getById(agent.id);
+      if (updated) {
+        onSave(updated);
+      }
     } else {
       // Create new
-      const newAgent = agentStorage.save(formData as Omit<Agent, 'id' | 'createdAt' | 'updatedAt'>);
+      const newAgent = await agentStorage.save(formData as Omit<Agent, 'id' | 'createdAt' | 'updatedAt'>);
       onSave(newAgent);
     }
 
@@ -474,14 +476,14 @@ export function AgentManager({ activeAgent, onAgentChange }: AgentManagerProps) 
     loadAgents();
   }, []);
 
-  const loadAgents = () => {
-    const all = agentStorage.getAll();
+  const loadAgents = async () => {
+    const all = await agentStorage.getAll();
     setAgents(all);
 
     // If no active agent, set first one
     if (!activeAgent && all.length > 0) {
       onAgentChange(all[0]);
-      agentStorage.setActiveAgent(all[0].id);
+      await agentStorage.setActiveAgent(all[0].id);
     }
   };
 
@@ -503,32 +505,32 @@ export function AgentManager({ activeAgent, onAgentChange }: AgentManagerProps) 
     }
   };
 
-  const handleDelete = (agent: Agent) => {
+  const handleDelete = async (agent: Agent) => {
     if (confirm(`Удалить агента "${agent.name}"?`)) {
-      agentStorage.delete(agent.id);
-      loadAgents();
+      await agentStorage.delete(agent.id);
+      await loadAgents();
 
       // If deleted agent was active, switch to first available
       if (activeAgent?.id === agent.id) {
-        const remaining = agentStorage.getAll();
+        const remaining = await agentStorage.getAll();
         if (remaining.length > 0) {
           onAgentChange(remaining[0]);
-          agentStorage.setActiveAgent(remaining[0].id);
+          await agentStorage.setActiveAgent(remaining[0].id);
         }
       }
     }
   };
 
-  const handleDuplicate = (agent: Agent) => {
-    const duplicate = agentStorage.duplicate(agent.id);
+  const handleDuplicate = async (agent: Agent) => {
+    const duplicate = await agentStorage.duplicate(agent.id);
     if (duplicate) {
-      loadAgents();
+      await loadAgents();
     }
   };
 
-  const handleSelectAgent = (agent: Agent) => {
+  const handleSelectAgent = async (agent: Agent) => {
     onAgentChange(agent);
-    agentStorage.setActiveAgent(agent.id);
+    await agentStorage.setActiveAgent(agent.id);
   };
 
   return (

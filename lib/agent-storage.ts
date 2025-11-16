@@ -1,9 +1,6 @@
 import { Agent } from './types';
 import { getReasoningPrompt } from './reasoning-modes';
 
-const STORAGE_KEY = 'querylane.agents.v1';
-const ACTIVE_AGENT_KEY = 'querylane.active-agent.v1';
-
 /**
  * Default agents - experimental and reasoning modes
  */
@@ -112,39 +109,36 @@ function getDefaultAgents(): Agent[] {
 /**
  * Initialize storage with default agents if empty
  */
-function initializeStorage(): void {
+async function initializeStorage(): Promise<void> {
   if (typeof window === 'undefined') return;
 
   try {
-    const existing = localStorage.getItem(STORAGE_KEY);
-    if (!existing) {
+    const agents = await agentStorage.getAll();
+    if (agents.length === 0) {
       const defaults = getDefaultAgents();
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(defaults));
-
-      // Set first agent as active by default
-      localStorage.setItem(ACTIVE_AGENT_KEY, defaults[0].id);
+      await agentStorage.saveAll(defaults);
+      await agentStorage.setActiveAgent(defaults[0].id);
     }
   } catch (error) {
-    // Initialization failed
+    console.error('Failed to initialize agent storage:', error);
   }
-}
-
-// Initialize on module load
-if (typeof window !== 'undefined') {
-  initializeStorage();
 }
 
 export const agentStorage = {
   /**
    * Get all agents
    */
-  getAll(): Agent[] {
+  async getAll(): Promise<Agent[]> {
     if (typeof window === 'undefined') return [];
 
     try {
-      const data = localStorage.getItem(STORAGE_KEY);
-      return data ? JSON.parse(data) : getDefaultAgents();
-    } catch {
+      const response = await fetch('/api/storage/agents');
+      if (!response.ok) return getDefaultAgents();
+
+      const data = await response.json();
+      return data.agents || getDefaultAgents();
+    } catch (error) {
+      console.error('Error fetching agents:', error);
       return getDefaultAgents();
     }
   },
@@ -152,19 +146,29 @@ export const agentStorage = {
   /**
    * Get agent by ID
    */
-  getById(id: string): Agent | undefined {
-    return this.getAll().find(a => a.id === id);
+  async getById(id: string): Promise<Agent | undefined> {
+    if (typeof window === 'undefined') return undefined;
+
+    try {
+      const response = await fetch(`/api/storage/agents/${id}`);
+      if (!response.ok) return undefined;
+
+      const data = await response.json();
+      return data.agent;
+    } catch (error) {
+      console.error('Error fetching agent:', error);
+      return undefined;
+    }
   },
 
   /**
    * Save new agent
    */
-  save(agent: Omit<Agent, 'id' | 'createdAt' | 'updatedAt'>): Agent {
+  async save(agent: Omit<Agent, 'id' | 'createdAt' | 'updatedAt'>): Promise<Agent> {
     if (typeof window === 'undefined') {
       throw new Error('Cannot save in SSR');
     }
 
-    const existing = this.getAll();
     const newAgent: Agent = {
       ...agent,
       id: `agent_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -172,81 +176,101 @@ export const agentStorage = {
       updatedAt: Date.now(),
     };
 
-    const updated = [...existing, newAgent];
-    this.saveAll(updated);
+    try {
+      const response = await fetch('/api/storage/agents', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newAgent),
+      });
 
-    return newAgent;
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Failed to save agent:', errorText);
+        throw new Error('Failed to save agent');
+      }
+
+      const data = await response.json();
+      return data.agent;
+    } catch (error) {
+      console.error('Error saving agent:', error);
+      throw error;
+    }
   },
 
   /**
    * Update existing agent
    */
-  update(id: string, updates: Partial<Agent>): boolean {
+  async update(id: string, updates: Partial<Agent>): Promise<boolean> {
     if (typeof window === 'undefined') return false;
 
-    const agents = this.getAll();
-    const index = agents.findIndex(a => a.id === id);
+    try {
+      const response = await fetch(`/api/storage/agents/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+      });
 
-    if (index === -1) return false;
-
-    agents[index] = {
-      ...agents[index],
-      ...updates,
-      id: agents[index].id, // Prevent ID change
-      createdAt: agents[index].createdAt, // Preserve creation time
-      updatedAt: Date.now(),
-    };
-
-    this.saveAll(agents);
-    return true;
+      return response.ok;
+    } catch (error) {
+      console.error('Error updating agent:', error);
+      return false;
+    }
   },
 
   /**
    * Delete an agent
    */
-  delete(id: string): boolean {
+  async delete(id: string): Promise<boolean> {
     if (typeof window === 'undefined') return false;
 
-    const agents = this.getAll();
-    const filtered = agents.filter(a => a.id !== id);
+    try {
+      const response = await fetch(`/api/storage/agents/${id}`, {
+        method: 'DELETE',
+      });
 
-    // Prevent deleting all agents
-    if (filtered.length === 0) {
+      return response.ok;
+    } catch (error) {
+      console.error('Error deleting agent:', error);
       return false;
     }
-
-    // If deleted agent was active, set first agent as active
-    const activeId = this.getActiveAgentId();
-    if (activeId === id) {
-      this.setActiveAgent(filtered[0].id);
-    }
-
-    this.saveAll(filtered);
-    return true;
   },
 
   /**
    * Save all agents to storage
    */
-  saveAll(agents: Agent[]): void {
+  async saveAll(agents: Agent[]): Promise<void> {
     if (typeof window === 'undefined') return;
 
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(agents));
+      const response = await fetch('/api/storage/agents', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(agents),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Failed to save agents:', errorText);
+      }
     } catch (error) {
-      // Save failed
+      console.error('Error saving all agents:', error);
     }
   },
 
   /**
    * Get active agent ID
    */
-  getActiveAgentId(): string | null {
+  async getActiveAgentId(): Promise<string | null> {
     if (typeof window === 'undefined') return null;
 
     try {
-      return localStorage.getItem(ACTIVE_AGENT_KEY);
-    } catch {
+      const response = await fetch('/api/storage/settings');
+      if (!response.ok) return null;
+
+      const data = await response.json();
+      return data.settings.activeAgentId || null;
+    } catch (error) {
+      console.error('Error fetching active agent ID:', error);
       return null;
     }
   },
@@ -254,16 +278,16 @@ export const agentStorage = {
   /**
    * Get active agent
    */
-  getActiveAgent(): Agent | null {
-    const id = this.getActiveAgentId();
+  async getActiveAgent(): Promise<Agent | null> {
+    const id = await this.getActiveAgentId();
     if (!id) return null;
 
-    const agent = this.getById(id);
+    const agent = await this.getById(id);
     if (!agent) {
       // If stored agent doesn't exist, use first available
-      const all = this.getAll();
+      const all = await this.getAll();
       if (all.length > 0) {
-        this.setActiveAgent(all[0].id);
+        await this.setActiveAgent(all[0].id);
         return all[0];
       }
       return null;
@@ -275,16 +299,21 @@ export const agentStorage = {
   /**
    * Set active agent
    */
-  setActiveAgent(id: string): boolean {
+  async setActiveAgent(id: string): Promise<boolean> {
     if (typeof window === 'undefined') return false;
 
-    const agent = this.getById(id);
+    const agent = await this.getById(id);
     if (!agent) return false;
 
     try {
-      localStorage.setItem(ACTIVE_AGENT_KEY, id);
+      await fetch('/api/storage/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ activeAgentId: id }),
+      });
       return true;
     } catch (error) {
+      console.error('Error setting active agent:', error);
       return false;
     }
   },
@@ -292,35 +321,40 @@ export const agentStorage = {
   /**
    * Duplicate an agent
    */
-  duplicate(id: string): Agent | null {
-    const original = this.getById(id);
+  async duplicate(id: string): Promise<Agent | null> {
+    const original = await this.getById(id);
     if (!original) return null;
 
-    const duplicate = this.save({
-      name: `${original.name} (Копия)`,
-      description: original.description,
-      model: original.model,
-      provider: original.provider,
-      systemPrompt: original.systemPrompt,
-      parameters: { ...original.parameters },
-      formatConfig: { ...original.formatConfig },
-    });
+    try {
+      const duplicate = await this.save({
+        name: `${original.name} (Копия)`,
+        description: original.description,
+        model: original.model,
+        provider: original.provider,
+        systemPrompt: original.systemPrompt,
+        parameters: { ...original.parameters },
+        formatConfig: { ...original.formatConfig },
+      });
 
-    return duplicate;
+      return duplicate;
+    } catch (error) {
+      console.error('Error duplicating agent:', error);
+      return null;
+    }
   },
 
   /**
    * Export agents to JSON
    */
-  exportToJSON(): string {
-    const agents = this.getAll();
+  async exportToJSON(): Promise<string> {
+    const agents = await this.getAll();
     return JSON.stringify(agents, null, 2);
   },
 
   /**
    * Import agents from JSON
    */
-  importFromJSON(jsonString: string): boolean {
+  async importFromJSON(jsonString: string): Promise<boolean> {
     if (typeof window === 'undefined') return false;
 
     try {
@@ -330,7 +364,7 @@ export const agentStorage = {
         return false;
       }
 
-      const existing = this.getAll();
+      const existing = await this.getAll();
       const merged = [...existing, ...imported];
 
       // Remove duplicates by ID
@@ -338,9 +372,10 @@ export const agentStorage = {
         new Map(merged.map(item => [item.id, item])).values()
       );
 
-      this.saveAll(unique);
+      await this.saveAll(unique);
       return true;
     } catch (error) {
+      console.error('Error importing agents:', error);
       return false;
     }
   },
@@ -348,9 +383,10 @@ export const agentStorage = {
   /**
    * Search agents by name or description
    */
-  search(query: string): Agent[] {
+  async search(query: string): Promise<Agent[]> {
     const lowerQuery = query.toLowerCase();
-    return this.getAll().filter(
+    const all = await this.getAll();
+    return all.filter(
       a =>
         a.name.toLowerCase().includes(lowerQuery) ||
         a.description?.toLowerCase().includes(lowerQuery)
@@ -360,36 +396,38 @@ export const agentStorage = {
   /**
    * Get agents by provider
    */
-  getByProvider(provider: 'zai' | 'openrouter'): Agent[] {
-    return this.getAll().filter(a => a.provider === provider);
+  async getByProvider(provider: 'zai' | 'openrouter'): Promise<Agent[]> {
+    const all = await this.getAll();
+    return all.filter(a => a.provider === provider);
   },
 
   /**
    * Get agents by model
    */
-  getByModel(model: string): Agent[] {
-    return this.getAll().filter(a => a.model === model);
+  async getByModel(model: string): Promise<Agent[]> {
+    const all = await this.getAll();
+    return all.filter(a => a.model === model);
   },
 
   /**
    * Reset to default agents
    */
-  resetToDefaults(): void {
+  async resetToDefaults(): Promise<void> {
     if (typeof window === 'undefined') return;
 
     const defaults = getDefaultAgents();
-    this.saveAll(defaults);
-    this.setActiveAgent(defaults[0].id);
+    await this.saveAll(defaults);
+    await this.setActiveAgent(defaults[0].id);
   },
 
   /**
    * Add missing default agents (useful for updates)
    * Only adds agents that don't exist yet
    */
-  addMissingDefaults(): number {
+  async addMissingDefaults(): Promise<number> {
     if (typeof window === 'undefined') return 0;
 
-    const existing = this.getAll();
+    const existing = await this.getAll();
     const existingIds = new Set(existing.map(a => a.id));
     const defaults = getDefaultAgents();
 
@@ -397,7 +435,7 @@ export const agentStorage = {
 
     if (missing.length > 0) {
       const updated = [...existing, ...missing];
-      this.saveAll(updated);
+      await this.saveAll(updated);
     }
 
     return missing.length;
@@ -406,8 +444,15 @@ export const agentStorage = {
   /**
    * Check if reasoning mode agents are available
    */
-  hasReasoningModes(): boolean {
-    const agents = this.getAll();
+  async hasReasoningModes(): Promise<boolean> {
+    const agents = await this.getAll();
     return agents.some(a => a.id.startsWith('reasoning_'));
+  },
+
+  /**
+   * Initialize storage (ensure defaults exist)
+   */
+  async initialize(): Promise<void> {
+    await initializeStorage();
   },
 };

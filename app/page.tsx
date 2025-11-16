@@ -40,44 +40,47 @@ export default function ChatPage() {
 
   // Hydration-safe initialization
   useEffect(() => {
-    // Load theme preference
-    const savedTheme = localStorage.getItem('querylane.theme');
-    if (savedTheme) {
-      setIsDarkMode(savedTheme === 'dark');
-    } else {
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      setIsDarkMode(prefersDark);
-    }
+    const initialize = async () => {
+      // Load theme preference
+      const savedTheme = localStorage.getItem('querylane.theme');
+      if (savedTheme) {
+        setIsDarkMode(savedTheme === 'dark');
+      } else {
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        setIsDarkMode(prefersDark);
+      }
 
-    // Add missing default agents (for updates with new agents)
-    const addedCount = agentStorage.addMissingDefaults();
+      // Add missing default agents (for updates with new agents)
+      const addedCount = await agentStorage.addMissingDefaults();
 
-    // If new agents were added, reload the page to show them
-    if (addedCount > 0) {
-      window.location.reload();
-      return;
-    }
+      // If new agents were added, reload the page to show them
+      if (addedCount > 0) {
+        window.location.reload();
+        return;
+      }
 
-    // Load active agent
-    const agent = agentStorage.getActiveAgent();
-    if (agent) {
-      setActiveAgent(agent);
-    }
+      // Initialize agent storage to ensure defaults exist
+      await agentStorage.initialize();
 
-    // Load current chat or create new one
-    const currentChat = getCurrentOrCreateChat();
-    setCurrentChatIdState(currentChat.id);
-    setMessages(currentChat.messages);
+      // Load active agent
+      const agent = await agentStorage.getActiveAgent();
+      if (agent) {
+        setActiveAgent(agent);
+      }
 
-    setMounted(true);
+      // Load current chat or create new one
+      const currentChat = await getCurrentOrCreateChat();
+      setCurrentChatIdState(currentChat.id);
+      setMessages(currentChat.messages);
+
+      setMounted(true);
+    };
+
+    initialize();
   }, []);
 
-  // Save messages to current chat whenever they change
-  useEffect(() => {
-    if (mounted && currentChatId) {
-      updateChat(currentChatId, { messages });
-    }
-  }, [messages, mounted, currentChatId]);
+  // NOTE: Removed real-time save on every message change
+  // Now saving only after complete LLM response to avoid file conflicts during streaming
 
   // Save theme preference and apply to document whenever it changes
   useEffect(() => {
@@ -119,7 +122,7 @@ export default function ChatPage() {
 
       // ВАЖНО: Перечитываем агента из storage перед запросом
       // чтобы гарантировать актуальные параметры
-      const currentAgent = agentStorage.getById(activeAgent.id) || activeAgent;
+      const currentAgent = await agentStorage.getById(activeAgent.id) || activeAgent;
 
       console.log('[PAGE] Отправка с агентом:', {
         name: currentAgent.name,
@@ -220,6 +223,14 @@ export default function ChatPage() {
                   cost,
                 },
               };
+
+              // Save to storage after complete response
+              if (currentChatId) {
+                setTimeout(() => {
+                  updateChat(currentChatId, { messages: newMessages });
+                }, 100);
+              }
+
               return newMessages;
             });
 
@@ -249,6 +260,14 @@ export default function ChatPage() {
                   cost,
                 },
               };
+
+              // Save to storage after complete response
+              if (currentChatId) {
+                setTimeout(() => {
+                  updateChat(currentChatId, { messages: newMessages });
+                }, 100);
+              }
+
               return newMessages;
             });
           }
@@ -260,6 +279,13 @@ export default function ChatPage() {
           setError(chunk.message || 'Unknown error occurred');
           setState('error');
           abortControllerRef.current = null;
+
+          // Save partial response even on error
+          if (currentChatId) {
+            setTimeout(() => {
+              updateChat(currentChatId, { messages });
+            }, 100);
+          }
         },
       });
     } catch (error) {
@@ -276,31 +302,38 @@ export default function ChatPage() {
       abortControllerRef.current.abort();
       setState('stopped');
       abortControllerRef.current = null;
+
+      // Save partial response
+      if (currentChatId) {
+        setTimeout(() => {
+          updateChat(currentChatId, { messages });
+        }, 100);
+      }
     }
   };
 
-  const handleClear = () => {
+  const handleClear = async () => {
     if (currentChatId) {
-      updateChat(currentChatId, { messages: [] });
+      await updateChat(currentChatId, { messages: [] });
       setMessages([]);
       setError(null);
       setState('idle');
     }
   };
 
-  const handleNewChat = () => {
-    const newChat = createChat();
+  const handleNewChat = async () => {
+    const newChat = await createChat();
     setCurrentChatIdState(newChat.id);
     setMessages([]);
     setError(null);
     setState('idle');
   };
 
-  const handleSelectChat = (chatId: string) => {
-    const chat = getChatById(chatId);
+  const handleSelectChat = async (chatId: string) => {
+    const chat = await getChatById(chatId);
     if (chat) {
       setCurrentChatIdState(chat.id);
-      setCurrentChatId(chat.id); // Sync with storage
+      await setCurrentChatId(chat.id); // Sync with storage
       setMessages(chat.messages);
       setError(null);
       setState('idle');
@@ -383,7 +416,7 @@ export default function ChatPage() {
 
       // Update messages in state and storage
       setMessages(result.messages);
-      updateChat(currentChatId, { messages: result.messages });
+      await updateChat(currentChatId, { messages: result.messages });
       setError(null); // Clear any previous errors
 
       console.log(

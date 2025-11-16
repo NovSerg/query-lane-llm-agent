@@ -8,9 +8,6 @@ export interface Chat {
   updatedAt: number;
 }
 
-const STORAGE_KEY = 'querylane.chats';
-const CURRENT_CHAT_KEY = 'querylane.currentChatId';
-
 /**
  * Генерировать заголовок чата из первого сообщения
  */
@@ -29,17 +26,17 @@ function generateTitle(messages: Message[]): string {
 /**
  * Получить все чаты
  */
-export function getAllChats(): Chat[] {
+export async function getAllChats(): Promise<Chat[]> {
   if (typeof window === 'undefined') return [];
 
   try {
-    const data = localStorage.getItem(STORAGE_KEY);
-    if (!data) return [];
+    const response = await fetch('/api/storage/chats');
+    if (!response.ok) return [];
 
-    const chats: Chat[] = JSON.parse(data);
-    // Сортируем по дате обновления (новые сверху)
-    return chats.sort((a, b) => b.updatedAt - a.updatedAt);
+    const data = await response.json();
+    return data.chats || [];
   } catch (error) {
+    console.error('Error fetching chats:', error);
     return [];
   }
 }
@@ -47,28 +44,25 @@ export function getAllChats(): Chat[] {
 /**
  * Получить чат по ID
  */
-export function getChatById(id: string): Chat | null {
-  const chats = getAllChats();
-  return chats.find(chat => chat.id === id) || null;
-}
-
-/**
- * Сохранить чаты
- */
-function saveChats(chats: Chat[]): void {
-  if (typeof window === 'undefined') return;
+export async function getChatById(id: string): Promise<Chat | null> {
+  if (typeof window === 'undefined') return null;
 
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(chats));
+    const response = await fetch(`/api/storage/chats/${id}`);
+    if (!response.ok) return null;
+
+    const data = await response.json();
+    return data.chat || null;
   } catch (error) {
-    // Save failed
+    console.error('Error fetching chat:', error);
+    return null;
   }
 }
 
 /**
  * Создать новый чат
  */
-export function createChat(messages: Message[] = []): Chat {
+export async function createChat(messages: Message[] = []): Promise<Chat> {
   const chat: Chat = {
     id: `chat_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
     title: messages.length > 0 ? generateTitle(messages) : 'Новый чат',
@@ -77,111 +71,181 @@ export function createChat(messages: Message[] = []): Chat {
     updatedAt: Date.now(),
   };
 
-  const chats = getAllChats();
-  chats.push(chat);
-  saveChats(chats);
-  setCurrentChatId(chat.id);
+  try {
+    const response = await fetch('/api/storage/chats', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(chat),
+    });
 
-  return chat;
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Failed to create chat:', errorText);
+      throw new Error('Failed to create chat');
+    }
+
+    const data = await response.json();
+    await setCurrentChatId(data.chat.id);
+
+    return data.chat;
+  } catch (error) {
+    console.error('Error creating chat:', error);
+    throw error;
+  }
 }
 
 /**
  * Обновить чат
  */
-export function updateChat(id: string, updates: Partial<Omit<Chat, 'id' | 'createdAt'>>): void {
-  const chats = getAllChats();
-  const index = chats.findIndex(chat => chat.id === id);
+export async function updateChat(id: string, updates: Partial<Omit<Chat, 'id' | 'createdAt'>>): Promise<void> {
+  if (typeof window === 'undefined') return;
 
-  if (index === -1) return;
+  try {
+    // Автоматически обновляем заголовок если есть сообщения
+    const finalUpdates = { ...updates };
+    if (updates.messages) {
+      const chat = await getChatById(id);
+      if (chat && chat.title === 'Новый чат') {
+        finalUpdates.title = generateTitle(updates.messages);
+      }
+    }
 
-  chats[index] = {
-    ...chats[index],
-    ...updates,
-    updatedAt: Date.now(),
-  };
+    const response = await fetch(`/api/storage/chats/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(finalUpdates),
+    });
 
-  // Автоматически обновляем заголовок если есть сообщения
-  if (updates.messages && chats[index].title === 'Новый чат') {
-    chats[index].title = generateTitle(updates.messages);
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Failed to update chat:', errorText);
+    }
+  } catch (error) {
+    console.error('Error updating chat:', error);
   }
-
-  saveChats(chats);
 }
 
 /**
  * Переименовать чат
  */
-export function renameChat(id: string, title: string): void {
-  updateChat(id, { title });
+export async function renameChat(id: string, title: string): Promise<void> {
+  await updateChat(id, { title });
 }
 
 /**
  * Удалить чат
  */
-export function deleteChat(id: string): void {
-  const chats = getAllChats();
-  const filtered = chats.filter(chat => chat.id !== id);
-  saveChats(filtered);
+export async function deleteChat(id: string): Promise<void> {
+  if (typeof window === 'undefined') return;
 
-  // Если удалили текущий чат, сбрасываем
-  if (getCurrentChatId() === id) {
-    clearCurrentChatId();
+  try {
+    const response = await fetch(`/api/storage/chats/${id}`, {
+      method: 'DELETE',
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Failed to delete chat:', errorText);
+      return;
+    }
+
+    // Проверяем, был ли это текущий чат
+    const currentId = await getCurrentChatId();
+    if (currentId === id) {
+      await clearCurrentChatId();
+    }
+  } catch (error) {
+    console.error('Error deleting chat:', error);
   }
 }
 
 /**
  * Получить ID текущего чата
  */
-export function getCurrentChatId(): string | null {
+export async function getCurrentChatId(): Promise<string | null> {
   if (typeof window === 'undefined') return null;
-  return localStorage.getItem(CURRENT_CHAT_KEY);
+
+  try {
+    const response = await fetch('/api/storage/settings');
+    if (!response.ok) return null;
+
+    const data = await response.json();
+    return data.settings.currentChatId || null;
+  } catch (error) {
+    console.error('Error fetching current chat ID:', error);
+    return null;
+  }
 }
 
 /**
  * Установить текущий чат
  */
-export function setCurrentChatId(id: string): void {
+export async function setCurrentChatId(id: string): Promise<void> {
   if (typeof window === 'undefined') return;
-  localStorage.setItem(CURRENT_CHAT_KEY, id);
+
+  try {
+    await fetch('/api/storage/settings', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ currentChatId: id }),
+    });
+  } catch (error) {
+    console.error('Error setting current chat ID:', error);
+  }
 }
 
 /**
  * Очистить текущий чат
  */
-export function clearCurrentChatId(): void {
+export async function clearCurrentChatId(): Promise<void> {
   if (typeof window === 'undefined') return;
-  localStorage.removeItem(CURRENT_CHAT_KEY);
+
+  try {
+    await fetch('/api/storage/settings', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ currentChatId: null }),
+    });
+  } catch (error) {
+    console.error('Error clearing current chat ID:', error);
+  }
 }
 
 /**
  * Получить или создать текущий чат
  */
-export function getCurrentOrCreateChat(): Chat {
-  const currentId = getCurrentChatId();
+export async function getCurrentOrCreateChat(): Promise<Chat> {
+  const currentId = await getCurrentChatId();
 
   if (currentId) {
-    const chat = getChatById(currentId);
+    const chat = await getChatById(currentId);
     if (chat) return chat;
   }
 
   // Если текущего чата нет, создаём новый
-  return createChat();
+  return await createChat();
 }
 
 /**
  * Удалить все чаты (для очистки)
  */
-export function deleteAllChats(): void {
+export async function deleteAllChats(): Promise<void> {
   if (typeof window === 'undefined') return;
-  localStorage.removeItem(STORAGE_KEY);
-  localStorage.removeItem(CURRENT_CHAT_KEY);
+
+  try {
+    await fetch('/api/storage/chats', {
+      method: 'DELETE',
+    });
+  } catch (error) {
+    console.error('Error deleting all chats:', error);
+  }
 }
 
 /**
  * Экспортировать чат в JSON
  */
-export function exportChat(id: string): string | null {
-  const chat = getChatById(id);
+export async function exportChat(id: string): Promise<string | null> {
+  const chat = await getChatById(id);
   if (!chat) return null;
 
   return JSON.stringify(chat, null, 2);
@@ -190,7 +254,7 @@ export function exportChat(id: string): string | null {
 /**
  * Импортировать чат из JSON
  */
-export function importChat(jsonData: string): Chat | null {
+export async function importChat(jsonData: string): Promise<Chat | null> {
   try {
     const chat: Chat = JSON.parse(jsonData);
 
@@ -204,12 +268,22 @@ export function importChat(jsonData: string): Chat | null {
     chat.createdAt = Date.now();
     chat.updatedAt = Date.now();
 
-    const chats = getAllChats();
-    chats.push(chat);
-    saveChats(chats);
+    const response = await fetch('/api/storage/chats', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(chat),
+    });
 
-    return chat;
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Failed to import chat:', errorText);
+      return null;
+    }
+
+    const data = await response.json();
+    return data.chat;
   } catch (error) {
+    console.error('Error importing chat:', error);
     return null;
   }
 }

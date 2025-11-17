@@ -14,6 +14,7 @@ Your fast lane from question to answer. A modern, responsive web chat interface 
 - ⚡ **Rate Limiting** - Built-in protection against abuse
 - 🔄 **Abort Control** - Stop generation at any time
 - 📋 **Copy & Clear** - Easy message management
+- 🔌 **MCP Integration** - Model Context Protocol support with Figma tools
 
 ## Quick Start
 
@@ -39,6 +40,9 @@ Get your Z.AI API key at [https://open.bigmodel.cn/](https://open.bigmodel.cn/)
 ZAI_API_KEY=your_api_key_here
 RATE_LIMIT_RPM=30
 MAX_INPUT_CHARS=10000
+
+# Optional: Figma MCP Integration
+FIGMA_API_KEY=your_figma_api_key_here
 ```
 
 ## Available Scripts
@@ -47,6 +51,7 @@ MAX_INPUT_CHARS=10000
 - `npm run build` - Production build
 - `npm run start` - Production server
 - `npm run test` - Run tests
+- `npm run test:mcp` - Test MCP connection (requires FIGMA_API_KEY)
 - `npm run lint` - Lint code
 - `npm run format` - Format code with Prettier
 
@@ -74,10 +79,28 @@ query-lane-llm-agent/
 ├── lib/                # Client utilities
 │   ├── ndjson-client.ts
 │   └── storage.ts
-└── server/             # Server-side code
-    ├── provider/       # AI provider adapters
-    └── schema.ts       # Zod validation schemas
+├── server/             # Server-side code
+│   ├── provider/       # AI provider adapters
+│   ├── mcp/           # MCP (Model Context Protocol) integration
+│   │   ├── figma-client.ts  # Figma MCP client
+│   │   └── README.md        # MCP documentation
+│   └── schema.ts       # Zod validation schemas
+└── scripts/            # Utility scripts
+    └── test-mcp.ts     # MCP connection test
 ```
+
+## MCP Integration
+
+QueryLane supports **Model Context Protocol (MCP)** for extending AI capabilities with external tools.
+
+**Currently integrated:**
+- 🎨 **Figma MCP** - Access Figma files, extract design data, download assets
+
+**Available tools:**
+- `get_figma_data` - Fetch Figma file data (layouts, components, styles)
+- `download_figma_images` - Download SVG/PNG assets from Figma
+
+See [server/mcp/README.md](server/mcp/README.md) for detailed MCP documentation.
 
 ## License
 

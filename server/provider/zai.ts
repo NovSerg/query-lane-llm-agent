@@ -42,11 +42,13 @@ export class ZAIAdapter implements ProviderAdapter {
     signal,
     formatConfig,
     parameters,
+    tools,
   }: {
     messages: Message[];
     signal?: AbortSignal;
     formatConfig?: FormatConfig;
     parameters?: LLMParameters;
+    tools?: import('../../lib/types').OpenAITool[];
   }): AsyncIterable<StreamChunk> {
     // Check for abort signal
     if (signal?.aborted) {
@@ -96,6 +98,12 @@ export class ZAIAdapter implements ProviderAdapter {
         messages: apiMessages,
         stream: true,
       };
+
+      // Add tools if provided
+      if (tools && tools.length > 0) {
+        requestBody.tools = tools;
+        requestBody.tool_choice = 'auto'; // Let model decide when to use tools
+      }
 
       // Add LLM parameters if provided
       if (parameters) {
@@ -148,6 +156,7 @@ export class ZAIAdapter implements ProviderAdapter {
       const decoder = new TextDecoder();
 
       let buffer = '';
+      const toolCallsAccumulator = new Map<number, any>(); // Accumulate by index
 
       while (true) {
         const { done, value } = await reader.read();
@@ -193,7 +202,50 @@ export class ZAIAdapter implements ProviderAdapter {
                   };
                 }
 
+                // Handle tool calls (streamed in chunks) - accumulate by index
+                if (delta.tool_calls && delta.tool_calls.length > 0) {
+                  for (const toolCallDelta of delta.tool_calls) {
+                    const index = toolCallDelta.index ?? 0;
+
+                    if (!toolCallsAccumulator.has(index)) {
+                      // First chunk for this tool call
+                      toolCallsAccumulator.set(index, {
+                        id: toolCallDelta.id || `call_${Date.now()}_${index}`,
+                        type: 'function',
+                        function: {
+                          name: toolCallDelta.function?.name || '',
+                          arguments: '',
+                        },
+                      });
+                    }
+
+                    // Accumulate data
+                    const accumulated = toolCallsAccumulator.get(index);
+                    if (toolCallDelta.function?.name) {
+                      accumulated.function.name = toolCallDelta.function.name;
+                    }
+                    if (toolCallDelta.function?.arguments) {
+                      accumulated.function.arguments += toolCallDelta.function.arguments;
+                    }
+                    if (toolCallDelta.id) {
+                      accumulated.id = toolCallDelta.id;
+                    }
+                  }
+                }
+
                 if (data.choices[0].finish_reason) {
+                  // Yield accumulated tool calls when streaming is done
+                  if (toolCallsAccumulator.size > 0) {
+                    for (const toolCall of toolCallsAccumulator.values()) {
+                      if (toolCall.function.name) {
+                        yield {
+                          type: 'tool_call',
+                          toolCall,
+                        };
+                      }
+                    }
+                  }
+
                   // Include usage data if available
                   const usage = data.usage
                     ? {

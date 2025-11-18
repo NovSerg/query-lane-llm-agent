@@ -121,9 +121,10 @@ export interface Agent {
 }
 
 export interface StreamChunk {
-  type: 'meta' | 'token' | 'done' | 'error';
+  type: 'meta' | 'token' | 'tool_call' | 'done' | 'error';
   content?: string;
   model?: string;
+  toolCall?: ToolCall;
   message?: string;
   code?: string;
   startedAt?: number;
@@ -136,11 +137,40 @@ export interface StreamChunk {
   };
 }
 
+/**
+ * OpenAI-compatible tool definition for function calling
+ */
+export interface OpenAITool {
+  type: 'function';
+  function: {
+    name: string;
+    description: string;
+    parameters: {
+      type: 'object';
+      properties: Record<string, any>;
+      required?: string[];
+    };
+  };
+}
+
+/**
+ * Tool call from AI model
+ */
+export interface ToolCall {
+  id: string;
+  type: 'function';
+  function: {
+    name: string;
+    arguments: string; // JSON string
+  };
+}
+
 export interface ProviderAdapter {
   generateStream(args: {
     messages: Message[];
     signal?: AbortSignal;
     formatConfig?: FormatConfig;
     parameters?: LLMParameters;
+    tools?: OpenAITool[]; // Add tools support
   }): AsyncIterable<StreamChunk>;
 }

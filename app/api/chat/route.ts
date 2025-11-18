@@ -1,7 +1,8 @@
 import { NextRequest } from 'next/server';
 import { ChatRequestSchema, validateInputLength } from '../../../server/schema';
 import { createProvider } from '../../../server/provider';
-import { StreamChunk } from '../../../lib/types';
+import { StreamChunk, ToolCall } from '../../../lib/types';
+import { loadMcpTools, executeMcpTool } from '../../../server/mcp/mcp-tools-loader';
 
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
 const RATE_LIMIT_RPM = parseInt(process.env.RATE_LIMIT_RPM || '30');
@@ -123,21 +124,118 @@ export async function POST(request: NextRequest) {
     const provider = createProvider(zaiKey, openRouterKey, model);
     const encoder = new TextEncoder();
 
+    // Load MCP tools
+    const { tools, toolsMap } = await loadMcpTools();
+    console.log(`[Chat API] Loaded ${tools.length} MCP tools`);
+
     const stream = new ReadableStream({
       async start(controller) {
         try {
-          for await (const chunk of provider.generateStream({
-            messages,
-            signal: request.signal,
-            formatConfig,
-            parameters,
-          })) {
-            if (request.signal.aborted) {
+          let currentMessages = [...messages];
+          let iteration = 0;
+          const MAX_ITERATIONS = 3; // Prevent infinite loops
+
+          while (iteration < MAX_ITERATIONS) {
+            iteration++;
+            console.log(`[Chat API] Starting iteration ${iteration}/${MAX_ITERATIONS}`);
+            const toolCalls: ToolCall[] = [];
+            let hasContent = false;
+            let chunkCount = 0;
+
+            // Generate response from AI
+            for await (const chunk of provider.generateStream({
+              messages: currentMessages,
+              signal: request.signal,
+              formatConfig,
+              parameters,
+              tools: tools.length > 0 ? tools : undefined,
+            })) {
+              if (request.signal.aborted) {
+                return;
+              }
+
+              chunkCount++;
+
+              // Collect complete tool calls (providers now handle accumulation)
+              if (chunk.type === 'tool_call' && chunk.toolCall && chunk.toolCall.function?.name) {
+                toolCalls.push(chunk.toolCall);
+                console.log(`[Chat API] Iteration ${iteration}: Tool call received: ${chunk.toolCall.function.name}`);
+              }
+
+              // Track if AI generated content
+              if (chunk.type === 'token') {
+                hasContent = true;
+              }
+
+              // Log done chunks
+              if (chunk.type === 'done') {
+                console.log(`[Chat API] Iteration ${iteration}: Done chunk received (${chunkCount} total chunks)`);
+              }
+
+              // Stream chunk to client
+              const line = JSON.stringify(chunk) + '\n';
+              controller.enqueue(encoder.encode(line));
+            }
+
+            console.log(`[Chat API] Iteration ${iteration} complete: ${toolCalls.length} tool calls, ${chunkCount} chunks, hasContent=${hasContent}`);
+
+            // If no tool calls, we're done
+            if (toolCalls.length === 0) {
+              console.log(`[Chat API] No tool calls, ending conversation`);
               break;
             }
 
-            const line = JSON.stringify(chunk) + '\n';
-            controller.enqueue(encoder.encode(line));
+            // Log and execute tool calls
+            console.log(`[Chat API] Executing ${toolCalls.length} tool calls...`);
+
+            for (const toolCall of toolCalls) {
+              try {
+                const { name, arguments: argsStr } = toolCall.function;
+                const args = JSON.parse(argsStr || '{}');
+
+                console.log(`[Chat API] Executing: ${name}(${JSON.stringify(args)})`);
+
+                // Execute MCP tool
+                const result = await executeMcpTool(name, args, toolsMap);
+                console.log(`[Chat API] Result: ${result.substring(0, 100)}...`);
+
+                // Add tool result to message history as a user message
+                // This format is more compatible with AI models
+                currentMessages.push({
+                  role: 'user',
+                  content: `Результат вызова инструмента ${name}:\n${result}\n\nИспользуй эти данные для ответа на вопрос пользователя.`,
+                });
+
+                // Send tool result chunk to client (for debugging)
+                const toolResultChunk = {
+                  type: 'token' as const,
+                  content: `\n\n[Получены данные из ${name}]\n`,
+                };
+                controller.enqueue(encoder.encode(JSON.stringify(toolResultChunk) + '\n'));
+
+              } catch (error) {
+                console.error(`[Chat API] Tool execution error:`, error);
+                const errorMsg = error instanceof Error ? error.message : String(error);
+
+                currentMessages.push({
+                  role: 'user',
+                  content: `[Tool Error]: ${errorMsg}`,
+                });
+              }
+            }
+
+            // Continue to next iteration with updated messages
+            // AI will now see the tool results and can formulate final response
+          }
+
+          // If we hit max iterations, warn the user
+          if (iteration >= MAX_ITERATIONS) {
+            console.log(`[Chat API] Max iterations reached`);
+            const warningChunk = {
+              type: 'token' as const,
+              content: '\n\n[Достигнут лимит итераций]',
+            };
+            controller.enqueue(encoder.encode(JSON.stringify(warningChunk) + '\n'));
           }
         } catch (error) {
           const errorChunk: StreamChunk = {

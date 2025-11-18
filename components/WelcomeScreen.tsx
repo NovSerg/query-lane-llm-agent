@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { ArrowRight } from 'lucide-react';
 import { McpToolsPanel } from '@/components/McpToolsPanel';
+import { WeatherToolsPanel } from '@/components/WeatherToolsPanel';
 
 interface WelcomeScreenProps {
   onSend: (message: string) => void;
@@ -74,8 +75,9 @@ export function WelcomeScreen({
           </div>
         </form>
 
-        {/* MCP Tools Panel */}
-        <div className="mt-6 sm:mt-8">
+        {/* MCP Tools Panels */}
+        <div className="mt-6 sm:mt-8 space-y-4">
+          <WeatherToolsPanel />
           <McpToolsPanel />
         </div>
       </div>

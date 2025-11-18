@@ -54,7 +54,12 @@ export async function processNDJSONStream(
                 break;
               case 'done':
                 callbacks.onDone?.(chunk as StreamChunk & { type: 'done' });
-                return;
+                // Don't return - continue reading for multi-turn conversations (tool calls)
+                break;
+              case 'tool_call':
+                // Tool calls are streamed but handled server-side
+                // Just pass through to client for display
+                break;
               case 'error':
                 callbacks.onError?.(chunk as StreamChunk & { type: 'error' });
                 return;

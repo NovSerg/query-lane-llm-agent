@@ -15,6 +15,7 @@ import { ChatHistory } from '@/components/ChatHistory';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { TokenCounter } from '@/components/TokenCounter';
 import { CompactButton } from '@/components/CompactButton';
+import { NotificationPanel } from '@/components/NotificationPanel';
 import {
   getCurrentOrCreateChat,
   getChatById,
@@ -457,6 +458,7 @@ export default function ChatPage() {
           </div>
           <div className="flex items-center gap-1 sm:gap-2">
             <AgentManager activeAgent={activeAgent} onAgentChange={setActiveAgent} />
+            <NotificationPanel />
             <IconButton
               onClick={toggleDarkMode}
               color="inherit"

@@ -4,6 +4,7 @@
  */
 
 import { createWeatherMcpClient, McpTool } from './weather-client';
+import { createReminderMcpClient } from './reminder-client';
 
 export interface OpenAITool {
   type: 'function';
@@ -59,6 +60,24 @@ export async function loadMcpTools(): Promise<{
       console.log(`✅ Loaded ${weatherTools.length} tools from Weather MCP`);
     } catch (error) {
       console.warn(`⚠️  Weather MCP server not available:`, error instanceof Error ? error.message : String(error));
+    }
+
+    // Load Reminder MCP tools
+    const reminderServerUrl = process.env.MCP_REMINDER_SERVER_URL || 'http://localhost:3002/mcp';
+
+    try {
+      const reminderClient = await createReminderMcpClient(reminderServerUrl);
+      const reminderTools = await reminderClient.listTools();
+
+      for (const tool of reminderTools) {
+        const openAITool = convertMcpToolToOpenAI(tool);
+        tools.push(openAITool);
+        toolsMap.set(tool.name, { client: reminderClient, tool });
+      }
+
+      console.log(`✅ Loaded ${reminderTools.length} tools from Reminder MCP`);
+    } catch (error) {
+      console.warn(`⚠️  Reminder MCP server not available:`, error instanceof Error ? error.message : String(error));
     }
 
     // Add more MCP servers here in the future

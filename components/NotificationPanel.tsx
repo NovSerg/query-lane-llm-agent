@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
 import CloseIcon from '@mui/icons-material/Close';
@@ -313,54 +314,90 @@ export function NotificationPanel() {
         </div>
       )}
 
-      {/* Toast Notifications */}
-      <div className="fixed bottom-4 right-4 z-[100] flex flex-col gap-3 max-w-sm">
-        {toasts.map((toast) => (
+      {/* Toast Notifications - rendered via Portal to body */}
+      {typeof window !== 'undefined' && createPortal(
+        <div className="fixed inset-y-0 right-4 z-[9999] flex items-center pointer-events-none">
+          <div className="flex flex-col gap-3 w-80 sm:w-96 pointer-events-auto">
+          {toasts.map((toast) => (
           <div
             key={toast.id}
-            className="bg-background border border-border rounded-xl shadow-2xl p-4 animate-in slide-in-from-right-5 duration-300"
+            className="relative overflow-hidden bg-gradient-to-br from-background to-muted/50 border border-border rounded-2xl shadow-2xl backdrop-blur-sm animate-in slide-in-from-right-full fade-in duration-500"
           >
-            {/* Header */}
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <CloudIcon className="w-4 h-4 text-blue-500" />
-                <span className="font-medium text-sm">{toast.notification.city}</span>
-              </div>
-              <button
-                onClick={() => removeToast(toast.id)}
-                className="text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <CloseIcon className="w-4 h-4" />
-              </button>
-            </div>
+            {/* Progress bar */}
+            <div className="absolute top-0 left-0 h-1 bg-gradient-to-r from-blue-500 to-cyan-400 animate-shrink-width" />
 
-            {/* Weather */}
-            {toast.notification.weather && (
-              <div className="text-xs mb-2">
-                <div className="font-medium">
-                  {toast.notification.weather.temperature}
-                  <span className="text-muted-foreground ml-1">
-                    ({toast.notification.weather.description})
-                  </span>
+            {/* Accent stripe */}
+            <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-blue-500 via-cyan-400 to-blue-600" />
+
+            <div className="p-4 pl-5">
+              {/* Header */}
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center shadow-lg shadow-blue-500/30">
+                    <CloudIcon className="w-4 h-4 text-white" />
+                  </div>
+                  <div>
+                    <div className="font-semibold text-sm">{toast.notification.city}</div>
+                    <div className="text-[10px] text-muted-foreground">
+                      {formatTime(toast.notification.timestamp)}
+                    </div>
+                  </div>
                 </div>
+                <button
+                  onClick={() => removeToast(toast.id)}
+                  className="w-6 h-6 rounded-full bg-muted/50 hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground transition-all hover:scale-110"
+                >
+                  <CloseIcon className="w-3.5 h-3.5" />
+                </button>
               </div>
-            )}
 
-            {/* Air Quality */}
-            {toast.notification.airQuality && (
-              <div className={`text-xs ${getAqiColor(toast.notification.airQuality.air_quality_index)}`}>
-                <AirIcon className="w-3 h-3 inline mr-1" />
-                AQI: {toast.notification.airQuality.air_quality_index} — {toast.notification.airQuality.air_quality_description}
-              </div>
-            )}
+              {/* Weather */}
+              {toast.notification.weather && (
+                <div className="bg-muted/30 rounded-lg p-3 mb-2">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-2xl font-bold">
+                        {toast.notification.weather.temperature}
+                      </div>
+                      <div className="text-xs text-muted-foreground capitalize">
+                        {toast.notification.weather.description}
+                      </div>
+                    </div>
+                    <div className="text-right text-xs text-muted-foreground">
+                      <div>Ощущается: {toast.notification.weather.feels_like}</div>
+                      <div>Влажность: {toast.notification.weather.humidity}</div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
-            {/* Time */}
-            <div className="text-[10px] text-muted-foreground mt-2">
-              {formatTime(toast.notification.timestamp)}
+              {/* Air Quality */}
+              {toast.notification.airQuality && (
+                <div className={`flex items-center gap-2 p-2 rounded-lg ${
+                  toast.notification.airQuality.air_quality_index <= 2
+                    ? 'bg-green-500/10'
+                    : toast.notification.airQuality.air_quality_index <= 3
+                    ? 'bg-yellow-500/10'
+                    : 'bg-red-500/10'
+                }`}>
+                  <AirIcon className={`w-4 h-4 ${getAqiColor(toast.notification.airQuality.air_quality_index)}`} />
+                  <div className="flex-1">
+                    <div className={`text-xs font-medium ${getAqiColor(toast.notification.airQuality.air_quality_index)}`}>
+                      {toast.notification.airQuality.air_quality_description}
+                    </div>
+                    <div className="text-[10px] text-muted-foreground">
+                      AQI: {toast.notification.airQuality.air_quality_index} | PM2.5: {toast.notification.airQuality.components.pm2_5}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
-        ))}
-      </div>
+          ))}
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }

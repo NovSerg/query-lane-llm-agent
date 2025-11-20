@@ -133,7 +133,7 @@ export async function POST(request: NextRequest) {
         try {
           let currentMessages = [...messages];
           let iteration = 0;
-          const MAX_ITERATIONS = 3; // Prevent infinite loops
+          const MAX_ITERATIONS = 6; // Prevent infinite loops
 
           while (iteration < MAX_ITERATIONS) {
             iteration++;
